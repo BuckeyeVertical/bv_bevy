@@ -295,7 +295,7 @@ def parse_args() -> Config:
     parser.add_argument("--camera-port", type=int, default=7002)
     parser.add_argument("--camera-id", default="camera/drone")
     parser.add_argument("--target", type=float, nargs=3, default=(0.0, -2.0, 0.075))
-    parser.add_argument("--hfov-deg", type=float, default=114.5916)
+    parser.add_argument("--hfov-deg", type=float, default=65.847456)
     parser.add_argument("--tolerance-pixels", type=float, default=8)
     parser.add_argument("--attempts", type=int, default=20)
     args = parser.parse_args()

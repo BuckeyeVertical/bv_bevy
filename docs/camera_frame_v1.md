@@ -17,12 +17,12 @@ begins immediately after that payload.
   "sim_time_ns": 1250000000,
   "camera_id": "camera/drone",
   "camera_model": "pinhole",
-  "fx": 410.93927,
-  "fy": 410.93927,
+  "fx": 988.3916,
+  "fy": 988.3916,
   "cx": 640.0,
-  "cy": 360.0,
+  "cy": 480.0,
   "width": 1280,
-  "height": 720,
+  "height": 960,
   "encoding": "jpeg",
   "data_length": 184205
 }

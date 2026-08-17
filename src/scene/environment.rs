@@ -1,6 +1,7 @@
 mod bv_mission;
 mod mission_test;
 mod suas;
+mod suas_layout;
 
 use bevy::image::{
     ImageAddressMode, ImageFilterMode, ImageLoaderSettings, ImageSampler, ImageSamplerDescriptor,

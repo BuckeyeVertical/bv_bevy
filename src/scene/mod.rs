@@ -6,6 +6,7 @@ use bevy::prelude::*;
 use crate::sim::{SimEntity, VEHICLE_ID};
 
 pub const VEHICLE_RENDER_LAYER: usize = 1;
+pub const WORLD_DEBUG_RENDER_LAYER: usize = 2;
 
 pub struct SimulationScenePlugin;
 

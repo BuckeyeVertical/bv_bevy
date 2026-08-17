@@ -1,47 +1,53 @@
 use std::f32::consts::{FRAC_PI_2, TAU};
 
-use bevy::math::Affine2;
-use bevy::prelude::*;
+use bevy::{camera::visibility::RenderLayers, math::Affine2, prelude::*};
 
-use crate::sim::gazebo_position_to_bevy;
+use crate::scene::WORLD_DEBUG_RENDER_LAYER;
 
-pub(super) const WORLD_WIDTH_M: f32 = 600.0;
-pub(super) const WORLD_DEPTH_M: f32 = 500.0;
+use super::suas_layout::{self, FLIGHT_BOUNDARY, LAP_ROUTE, SEARCH_BOUNDARY_1};
 
-const SEARCH_HALF_WIDTH_M: f32 = 125.0;
-const SEARCH_HALF_DEPTH_M: f32 = 80.0;
-const TARGET_BOUNDARY_MARGIN_M: f32 = 10.0;
+pub(super) const WORLD_WIDTH_M: f32 = 1_400.0;
+pub(super) const WORLD_DEPTH_M: f32 = 1_400.0;
+
+const WORLD_CENTER: Vec2 = Vec2::new(-45.0, -175.0);
 const TREE_MODEL_HEIGHT_M: f32 = 15.831_376;
 const BUSH_MODEL_HEIGHT_M: f32 = 7.117_86;
-const TARGET_STEP: Vec3 = Vec3::new(17.6777, 17.6777, 0.0);
-const FIRST_TARGET: Vec3 = Vec3::new(0.0, 10.0, 0.0);
-const MANNEQUIN_SCAN_INDEX: usize = 1;
-const TENT_SCAN_INDEX: usize = 3;
 const TARGET_CLEAR_RADIUS_M: f32 = 16.0;
 const GRASS_MACRO_TILE_M: f32 = 75.0;
+const DEBUG_LINE_HEIGHT_M: f32 = 0.035;
 
-const TREE_CLUSTERS: [Cluster; 9] = [
-    Cluster::new(-225.0, -175.0, 38.0, 28.0, 5),
-    Cluster::new(-230.0, 80.0, 42.0, 34.0, 5),
-    Cluster::new(-150.0, 185.0, 45.0, 28.0, 5),
-    Cluster::new(-80.0, -40.0, 28.0, 22.0, 4),
-    Cluster::new(90.0, 45.0, 32.0, 24.0, 4),
-    Cluster::new(175.0, -150.0, 45.0, 32.0, 5),
-    Cluster::new(235.0, 60.0, 38.0, 34.0, 5),
-    Cluster::new(185.0, 195.0, 42.0, 26.0, 4),
-    Cluster::new(30.0, 195.0, 36.0, 24.0, 3),
+const TREE_CLUSTERS: [Cluster; 14] = [
+    Cluster::new(-460.0, -430.0, 48.0, 36.0, 4),
+    Cluster::new(-230.0, -510.0, 55.0, 32.0, 4),
+    Cluster::new(70.0, -480.0, 44.0, 38.0, 3),
+    Cluster::new(370.0, -380.0, 58.0, 46.0, 4),
+    Cluster::new(480.0, -130.0, 42.0, 52.0, 3),
+    Cluster::new(390.0, 150.0, 58.0, 48.0, 4),
+    Cluster::new(240.0, 420.0, 50.0, 38.0, 4),
+    Cluster::new(-30.0, 510.0, 60.0, 34.0, 3),
+    Cluster::new(-410.0, 430.0, 54.0, 46.0, 4),
+    Cluster::new(-450.0, 100.0, 46.0, 52.0, 3),
+    Cluster::new(-130.0, 60.0, 42.0, 36.0, 4),
+    Cluster::new(50.0, -160.0, 36.0, 30.0, 3),
+    Cluster::new(290.0, -20.0, 44.0, 34.0, 4),
+    Cluster::new(-180.0, 270.0, 52.0, 42.0, 3),
 ];
 
-const BUSH_CLUSTERS: [Cluster; 9] = [
-    Cluster::new(-225.0, -175.0, 52.0, 38.0, 10),
-    Cluster::new(-230.0, 80.0, 54.0, 44.0, 9),
-    Cluster::new(-150.0, 185.0, 58.0, 36.0, 9),
-    Cluster::new(-80.0, -40.0, 40.0, 30.0, 9),
-    Cluster::new(90.0, 45.0, 44.0, 32.0, 9),
-    Cluster::new(175.0, -150.0, 58.0, 42.0, 9),
-    Cluster::new(235.0, 60.0, 46.0, 44.0, 9),
-    Cluster::new(185.0, 195.0, 54.0, 34.0, 8),
-    Cluster::new(30.0, 195.0, 48.0, 32.0, 8),
+const BUSH_CLUSTERS: [Cluster; 14] = [
+    Cluster::new(-460.0, -430.0, 64.0, 50.0, 8),
+    Cluster::new(-230.0, -510.0, 68.0, 46.0, 8),
+    Cluster::new(70.0, -480.0, 58.0, 52.0, 7),
+    Cluster::new(370.0, -380.0, 72.0, 58.0, 9),
+    Cluster::new(480.0, -130.0, 56.0, 66.0, 7),
+    Cluster::new(390.0, 150.0, 72.0, 62.0, 8),
+    Cluster::new(240.0, 420.0, 64.0, 52.0, 8),
+    Cluster::new(-30.0, 510.0, 76.0, 48.0, 7),
+    Cluster::new(-410.0, 430.0, 68.0, 60.0, 9),
+    Cluster::new(-450.0, 100.0, 60.0, 66.0, 7),
+    Cluster::new(-130.0, 60.0, 56.0, 50.0, 8),
+    Cluster::new(50.0, -160.0, 48.0, 42.0, 7),
+    Cluster::new(290.0, -20.0, 58.0, 48.0, 8),
+    Cluster::new(-180.0, 270.0, 66.0, 56.0, 7),
 ];
 
 #[derive(Clone, Copy)]
@@ -72,6 +78,8 @@ pub(super) fn spawn(
     spawn_access_track(commands, meshes, materials);
     spawn_vegetation(commands, asset_server);
     spawn_targets(commands, asset_server);
+    spawn_launch_pad(commands, meshes, materials);
+    spawn_layout_overlay(commands, meshes, materials);
 }
 
 fn spawn_ground(
@@ -97,6 +105,7 @@ fn spawn_ground(
         Name::new("SUAS ground"),
         Mesh3d(meshes.add(Plane3d::default().mesh().size(WORLD_WIDTH_M, WORLD_DEPTH_M))),
         MeshMaterial3d(material),
+        Transform::from_xyz(WORLD_CENTER.x, 0.0, WORLD_CENTER.y),
     ));
 }
 
@@ -129,7 +138,7 @@ fn spawn_ground_variation(
     });
     let mut rng = FixedRng::new(0x5355_4153);
 
-    for index in 0..22 {
+    for index in 0..70 {
         let position = open_ground_position(&mut rng);
         spawn_patch(
             commands,
@@ -137,12 +146,12 @@ fn spawn_ground_variation(
             &dry_grass,
             format!("Dry grass patch {index}"),
             position,
-            Vec2::new(rng.range(10.0, 28.0), rng.range(7.0, 18.0)),
+            Vec2::new(rng.range(12.0, 36.0), rng.range(8.0, 24.0)),
             rng.range(0.0, TAU),
         );
     }
 
-    for index in 0..14 {
+    for index in 0..35 {
         let position = open_ground_position(&mut rng);
         spawn_patch(
             commands,
@@ -196,8 +205,8 @@ fn spawn_access_track(
         ..default()
     });
 
-    for index in 0..18 {
-        let x_start = -270.0 + index as f32 * 30.0;
+    for index in 0..44 {
+        let x_start = WORLD_CENTER.x - 660.0 + index as f32 * 30.0;
         let x_end = x_start + 31.0;
         let start = Vec2::new(x_start, track_z(x_start));
         let end = Vec2::new(x_end, track_z(x_end));
@@ -315,20 +324,20 @@ fn spawn_targets(commands: &mut Commands, asset_server: &AssetServer) {
 }
 
 fn target_positions() -> [Vec2; 2] {
-    [MANNEQUIN_SCAN_INDEX, TENT_SCAN_INDEX].map(|index| {
-        let position = gazebo_position_to_bevy(FIRST_TARGET + TARGET_STEP * index as f32);
-        Vec2::new(position.x, position.z)
-    })
+    [
+        suas_layout::search_position(0.30, 0.35),
+        suas_layout::search_position(0.72, 0.68),
+    ]
 }
 
 fn target_inside_search(position: Vec2) -> bool {
-    position.x.abs() <= SEARCH_HALF_WIDTH_M - TARGET_BOUNDARY_MARGIN_M
-        && position.y.abs() <= SEARCH_HALF_DEPTH_M - TARGET_BOUNDARY_MARGIN_M
+    suas_layout::contains(&SEARCH_BOUNDARY_1.map(suas_layout::to_bevy), position)
 }
 
 fn cluster_position(cluster: Cluster, targets: &[Vec2; 2], rng: &mut FixedRng) -> Vec2 {
+    let center = WORLD_CENTER + cluster.center;
     for _ in 0..24 {
-        let position = ellipse_position(cluster.center, cluster.radius, rng);
+        let position = ellipse_position(center, cluster.radius, rng);
         if within_world(position, 6.0)
             && targets
                 .iter()
@@ -337,11 +346,15 @@ fn cluster_position(cluster: Cluster, targets: &[Vec2; 2], rng: &mut FixedRng) -
             return position;
         }
     }
-    cluster.center
+    center
 }
 
 fn open_ground_position(rng: &mut FixedRng) -> Vec2 {
-    Vec2::new(rng.range(-285.0, 285.0), rng.range(-235.0, 235.0))
+    WORLD_CENTER
+        + Vec2::new(
+            rng.range(-WORLD_WIDTH_M * 0.47, WORLD_WIDTH_M * 0.47),
+            rng.range(-WORLD_DEPTH_M * 0.47, WORLD_DEPTH_M * 0.47),
+        )
 }
 
 fn ellipse_position(center: Vec2, radius: Vec2, rng: &mut FixedRng) -> Vec2 {
@@ -351,12 +364,113 @@ fn ellipse_position(center: Vec2, radius: Vec2, rng: &mut FixedRng) -> Vec2 {
 }
 
 fn within_world(position: Vec2, margin: f32) -> bool {
-    position.x.abs() <= WORLD_WIDTH_M * 0.5 - margin
-        && position.y.abs() <= WORLD_DEPTH_M * 0.5 - margin
+    let relative = position - WORLD_CENTER;
+    relative.x.abs() <= WORLD_WIDTH_M * 0.5 - margin
+        && relative.y.abs() <= WORLD_DEPTH_M * 0.5 - margin
 }
 
 fn track_z(x: f32) -> f32 {
-    130.0 + 8.0 * (x / 85.0).sin()
+    WORLD_CENTER.y + 520.0 + 12.0 * (x / 120.0).sin()
+}
+
+fn spawn_launch_pad(
+    commands: &mut Commands,
+    meshes: &mut Assets<Mesh>,
+    materials: &mut Assets<StandardMaterial>,
+) {
+    let pad = materials.add(StandardMaterial {
+        base_color: Color::srgb(0.18, 0.20, 0.22),
+        perceptual_roughness: 1.0,
+        metallic: 0.0,
+        reflectance: 0.0,
+        ..default()
+    });
+    commands.spawn((
+        Name::new("SUAS launch pad and GPS origin"),
+        Mesh3d(meshes.add(Cylinder::new(6.0, 0.04))),
+        MeshMaterial3d(pad),
+        Transform::from_xyz(0.0, 0.02, 0.0),
+    ));
+}
+
+fn spawn_layout_overlay(
+    commands: &mut Commands,
+    meshes: &mut Assets<Mesh>,
+    materials: &mut Assets<StandardMaterial>,
+) {
+    let flight = materials.add(StandardMaterial {
+        base_color: Color::srgb(0.31, 0.65, 1.0),
+        unlit: true,
+        ..default()
+    });
+    let search = materials.add(StandardMaterial {
+        base_color: Color::srgb(0.95, 0.35, 0.68),
+        unlit: true,
+        ..default()
+    });
+    let lap = materials.add(StandardMaterial {
+        base_color: Color::srgb(1.0, 0.53, 0.24),
+        unlit: true,
+        ..default()
+    });
+    let line_mesh = meshes.add(Cuboid::new(1.0, DEBUG_LINE_HEIGHT_M, 1.0));
+
+    spawn_debug_path(
+        commands,
+        &line_mesh,
+        &flight,
+        "Flight boundary",
+        &FLIGHT_BOUNDARY.map(suas_layout::to_bevy),
+        2.5,
+    );
+    spawn_debug_path(
+        commands,
+        &line_mesh,
+        &search,
+        "Search boundary 1",
+        &SEARCH_BOUNDARY_1.map(suas_layout::to_bevy),
+        2.0,
+    );
+    let lap_points = LAP_ROUTE.map(suas_layout::to_bevy);
+    spawn_debug_path(commands, &line_mesh, &lap, "Lap route", &lap_points, 2.0);
+
+    let marker_mesh = meshes.add(Cylinder::new(3.5, DEBUG_LINE_HEIGHT_M));
+    for (index, point) in lap_points.into_iter().enumerate() {
+        commands.spawn((
+            Name::new(format!("Lap waypoint {}", index + 1)),
+            Mesh3d(marker_mesh.clone()),
+            MeshMaterial3d(lap.clone()),
+            RenderLayers::layer(WORLD_DEBUG_RENDER_LAYER),
+            Transform::from_xyz(point.x, DEBUG_LINE_HEIGHT_M, point.y),
+        ));
+    }
+}
+
+fn spawn_debug_path(
+    commands: &mut Commands,
+    mesh: &Handle<Mesh>,
+    material: &Handle<StandardMaterial>,
+    name: &str,
+    points: &[Vec2],
+    width: f32,
+) {
+    for index in 0..points.len() {
+        let start = points[index];
+        let end = points[(index + 1) % points.len()];
+        let center = (start + end) * 0.5;
+        let direction = end - start;
+        let heading = -direction.y.atan2(direction.x);
+
+        commands.spawn((
+            Name::new(format!("{name} segment {index}")),
+            Mesh3d(mesh.clone()),
+            MeshMaterial3d(material.clone()),
+            RenderLayers::layer(WORLD_DEBUG_RENDER_LAYER),
+            Transform::from_xyz(center.x, DEBUG_LINE_HEIGHT_M, center.y)
+                .with_rotation(Quat::from_rotation_y(heading))
+                .with_scale(Vec3::new(direction.length(), 1.0, width)),
+        ));
+    }
 }
 
 struct FixedRng(u64);
@@ -383,10 +497,24 @@ mod tests {
     use super::*;
 
     #[test]
-    fn world_and_search_dimensions_match_the_suas_layout() {
-        assert_eq!(WORLD_WIDTH_M * WORLD_DEPTH_M, 300_000.0);
-        assert_eq!(SEARCH_HALF_WIDTH_M * 2.0, 250.0);
-        assert_eq!(SEARCH_HALF_DEPTH_M * 2.0, 160.0);
+    fn world_contains_the_published_flight_area() {
+        for point in FLIGHT_BOUNDARY.map(suas_layout::to_bevy) {
+            assert!(within_world(point, 50.0));
+        }
+
+        for point in LAP_ROUTE.map(suas_layout::to_bevy) {
+            assert!(within_world(point, 50.0));
+        }
+    }
+
+    #[test]
+    fn search_boundary_one_has_the_expected_size() {
+        let [southwest, southeast, northeast, northwest] =
+            SEARCH_BOUNDARY_1.map(suas_layout::to_bevy);
+
+        assert!((250.0..=270.0).contains(&southwest.distance(southeast)));
+        assert!((140.0..=160.0).contains(&southwest.distance(northwest)));
+        assert!((250.0..=270.0).contains(&northwest.distance(northeast)));
     }
 
     #[test]
@@ -397,12 +525,12 @@ mod tests {
     }
 
     #[test]
-    fn targets_are_independent_and_on_the_existing_scan_line() {
+    fn targets_are_independent_inside_search_boundary_one() {
         let [mannequin, tent] = target_positions();
 
-        assert!(mannequin.distance(tent) > 40.0);
-        assert_eq!(MANNEQUIN_SCAN_INDEX, 1);
-        assert_eq!(TENT_SCAN_INDEX, 3);
+        assert!(mannequin.distance(tent) > 100.0);
+        assert!(target_inside_search(mannequin));
+        assert!(target_inside_search(tent));
     }
 
     #[test]

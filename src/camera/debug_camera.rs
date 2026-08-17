@@ -86,18 +86,20 @@ fn update_cursor_capture(
     mouse_buttons: Res<ButtonInput<MouseButton>>,
     keys: Res<ButtonInput<KeyCode>>,
     camera: Single<&DebugCamera>,
+    vehicles: Query<(&SimEntity, &Visibility)>,
 ) {
     let (window, mut cursor_options) = primary_window.into_inner();
+    let vehicle_visible = vehicles
+        .iter()
+        .any(|(entity, visibility)| entity.id() == VEHICLE_ID && *visibility != Visibility::Hidden);
+    let free_controls = uses_free_controls(camera.mode, vehicle_visible);
 
-    if camera.mode == DebugCameraMode::Free
-        && mouse_buttons.just_pressed(MouseButton::Left)
-        && window.focused
-    {
+    if free_controls && mouse_buttons.just_pressed(MouseButton::Left) && window.focused {
         cursor_options.visible = false;
         cursor_options.grab_mode = CursorGrabMode::Locked;
     }
 
-    if keys.just_pressed(KeyCode::Escape) || !window.focused {
+    if !free_controls || keys.just_pressed(KeyCode::Escape) || !window.focused {
         cursor_options.visible = true;
         cursor_options.grab_mode = CursorGrabMode::None;
     }
@@ -113,13 +115,11 @@ fn update_debug_camera(
 ) {
     let (mut transform, settings) = camera.into_inner();
 
-    if settings.mode == DebugCameraMode::Follow {
-        let Some((_, vehicle, _)) = sim_entities.iter().find(|(entity, _, visibility)| {
+    if settings.mode == DebugCameraMode::Follow
+        && let Some((_, vehicle, _)) = sim_entities.iter().find(|(entity, _, visibility)| {
             entity.id() == VEHICLE_ID && **visibility != Visibility::Hidden
-        }) else {
-            return;
-        };
-
+        })
+    {
         let desired = follow_transform(vehicle);
         let response = 1.0 - (-FOLLOW_RESPONSE * time.delta_secs()).exp();
         transform.translation = transform.translation.lerp(desired.translation, response);
@@ -169,6 +169,10 @@ fn update_debug_camera(
     transform.translation += direction * speed * time.delta_secs();
 }
 
+fn uses_free_controls(mode: DebugCameraMode, vehicle_visible: bool) -> bool {
+    mode == DebugCameraMode::Free || !vehicle_visible
+}
+
 fn follow_transform(vehicle: &Transform) -> Transform {
     let forward = horizontal_forward(vehicle.rotation);
     let target = vehicle.translation + Vec3::Y * FOLLOW_LOOK_HEIGHT;
@@ -212,6 +216,13 @@ mod tests {
         let direction = movement_direction(Quat::IDENTITY, Vec3::Z);
 
         assert!(direction.abs_diff_eq(Vec3::NEG_Z, EPSILON));
+    }
+
+    #[test]
+    fn follow_mode_uses_free_controls_until_a_vehicle_is_visible() {
+        assert!(uses_free_controls(DebugCameraMode::Follow, false));
+        assert!(!uses_free_controls(DebugCameraMode::Follow, true));
+        assert!(uses_free_controls(DebugCameraMode::Free, true));
     }
 
     #[test]

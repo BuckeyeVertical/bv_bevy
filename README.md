@@ -93,8 +93,11 @@ cd ~/Code/bv_bevy
 ./run_suas.sh
 ```
 
-This selects the 600 m × 500 m `SUAS` field. Use `./run_mission_test.sh` for
-the earlier minimal mission-test world.
+This selects the 1.4 km × 1.4 km georeferenced `SUAS` field. Its shared env
+file also gives PX4 the matching Tulsa home coordinates.
+
+The desktop camera shows the flight boundary, Search Boundary 1, lap route,
+and waypoints. These overlays are excluded from the simulated onboard camera.
 
 The window follows the drone by default. Press `F` for the free camera; left
 click enables mouse look and `W/A/S/D`, `E/Q`, and Shift move it.
@@ -112,6 +115,7 @@ Launch the mission in the fourth terminal:
 
 ```bash
 docker exec -it bv-mission bash
+export BV_MISSION_CONFIG=mission_suas_params.yaml
 ros2 launch bv_core mission.launch.py
 ```
 
