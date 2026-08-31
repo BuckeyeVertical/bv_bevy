@@ -37,6 +37,10 @@ npm ci
 npm run build
 ```
 
+Move the drone stl into bv_core/meshes/ via
+https://buckeyemailosu-my.sharepoint.com/my?id=%2Fpersonal%2Fclute%5F25%5Fosu%5Fedu%2FDocuments%2FRender%5FCAD%2ESTL&parent=%2Fpersonal%2Fclute%5F25%5Fosu%5Fedu%2FDocuments&ga=1
+make sure file is named Render_CAD.STL
+
 Build the ROS, ML, and GCS image:
 
 ```bash
