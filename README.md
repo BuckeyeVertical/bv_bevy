@@ -119,7 +119,7 @@ Launch the mission in the fourth terminal:
 
 ```bash
 docker exec -it bv-mission bash
-export BV_MISSION_CONFIG=mission_suas_params.yaml
+export BV_MISSION_CONFIG=sim_params.yaml
 ros2 launch bv_core mission.launch.py
 ```
 
