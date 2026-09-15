@@ -16,6 +16,9 @@ services:
       BV_BRIDGE_CONFIG: /opt/bv/config/px4_x500_gimbal.json
       BV_PX4_WORLD: bv_mission
       BV_PX4_NAV_DLL_ACT: "0"
+      PX4_HOME_LAT: "36.214675"
+      PX4_HOME_LON: "-96.00655556"
+      PX4_PARAM_MPC_ACC_HOR: "2"
       PX4_PARAM_SIM_BAT_MIN_PCT: "100"
       PX4_PARAM_MAV_0_BROADCAST: "1"
       PX4_PARAM_MAV_1_BROADCAST: "1"

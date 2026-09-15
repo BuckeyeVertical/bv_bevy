@@ -17,7 +17,7 @@ impl GeoPoint {
     }
 }
 
-pub(super) const HOME: GeoPoint = GeoPoint::new(36.215_310_17, -96.009_945_45);
+pub(super) const HOME: GeoPoint = GeoPoint::new(36.214_675, -96.006_555_56);
 
 pub(super) const FLIGHT_BOUNDARY: [GeoPoint; 11] = [
     GeoPoint::new(36.219_314_393_547_8, -96.001_710_891_723_62),

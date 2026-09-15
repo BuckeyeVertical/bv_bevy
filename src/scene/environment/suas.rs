@@ -9,7 +9,7 @@ use super::suas_layout::{self, FLIGHT_BOUNDARY, LAP_ROUTE, SEARCH_BOUNDARY_1};
 pub(super) const WORLD_WIDTH_M: f32 = 1_400.0;
 pub(super) const WORLD_DEPTH_M: f32 = 1_400.0;
 
-const WORLD_CENTER: Vec2 = Vec2::new(-45.0, -175.0);
+const WORLD_CENTER: Vec2 = Vec2::new(-115.627_68, 129.114_97);
 const TREE_MODEL_HEIGHT_M: f32 = 15.831_376;
 const BUSH_MODEL_HEIGHT_M: f32 = 7.117_86;
 const TARGET_CLEAR_RADIUS_M: f32 = 16.0;
