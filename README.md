@@ -78,6 +78,8 @@ Build the headless Gazebo and PX4 image. This first build takes several minutes.
 ```bash
 cd ~/Code/bv_bevy
 docker compose -f gazebo/compose.px4.yaml build
+# or alternatively skip long docker build step 
+# by pulling prebuilt image (see below)
 cargo build
 ```
 
@@ -88,6 +90,8 @@ Use four terminals. Start Gazebo and PX4 first:
 ```bash
 cd ~/Code/bv_bevy
 docker compose -f gazebo/compose.px4.yaml up
+# or run with prebuilt image if you skipped docker build step
+docker compose -f gazebo/compose.px4.prebuilt.yaml up
 ```
 
 Start native Bevy:
