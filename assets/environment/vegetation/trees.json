@@ -1,0 +1,203 @@
+{
+  "trees": {
+    "pine_01": {
+      "species": "pine",
+      "cards": 1740,
+      "source_tris": 123704,
+      "lod0_tris": 24250,
+      "lod1_tris": 8893,
+      "lod2_tris": 2284,
+      "height": 20.788604736328125,
+      "radius": 4.950692216517908
+    },
+    "pine_02": {
+      "species": "pine",
+      "cards": 1105,
+      "source_tris": 104160,
+      "lod0_tris": 17037,
+      "lod1_tris": 5242,
+      "lod2_tris": 1660,
+      "height": 14.2587890625,
+      "radius": 3.8302525134647505
+    },
+    "pine_03": {
+      "species": "pine",
+      "cards": 1550,
+      "source_tris": 81364,
+      "lod0_tris": 22196,
+      "lod1_tris": 7248,
+      "lod2_tris": 2035,
+      "height": 17.529346466064453,
+      "radius": 4.528278066710596
+    },
+    "pine_04": {
+      "species": "pine",
+      "cards": 1810,
+      "source_tris": 123338,
+      "lod0_tris": 24428,
+      "lod1_tris": 8996,
+      "lod2_tris": 2372,
+      "height": 17.195711135864258,
+      "radius": 4.4447117673916985
+    },
+    "pine_05": {
+      "species": "pine",
+      "cards": 2105,
+      "source_tris": 125560,
+      "lod0_tris": 28052,
+      "lod1_tris": 10142,
+      "lod2_tris": 2844,
+      "height": 20.174047470092773,
+      "radius": 4.785516963708451
+    },
+    "silver_fir_01": {
+      "species": "fir",
+      "cards": 1689,
+      "source_tris": 121468,
+      "lod0_tris": 27290,
+      "lod1_tris": 8015,
+      "lod2_tris": 2172,
+      "height": 19.263715744018555,
+      "radius": 3.7521985136240237
+    },
+    "silver_fir_02": {
+      "species": "fir",
+      "cards": 996,
+      "source_tris": 98626,
+      "lod0_tris": 16310,
+      "lod1_tris": 4849,
+      "lod2_tris": 1307,
+      "height": 14.4778470993042,
+      "radius": 3.339349549499948
+    },
+    "silver_fir_03": {
+      "species": "fir",
+      "cards": 1116,
+      "source_tris": 68168,
+      "lod0_tris": 17638,
+      "lod1_tris": 5464,
+      "lod2_tris": 1435,
+      "height": 16.799440383911133,
+      "radius": 3.5779010965972162
+    },
+    "silver_fir_04": {
+      "species": "fir",
+      "cards": 1012,
+      "source_tris": 102842,
+      "lod0_tris": 16780,
+      "lod1_tris": 4927,
+      "lod2_tris": 1356,
+      "height": 15.563339233398438,
+      "radius": 3.2878843798070734
+    },
+    "silver_fir_05": {
+      "species": "fir",
+      "cards": 476,
+      "source_tris": 98034,
+      "lod0_tris": 14039,
+      "lod1_tris": 3227,
+      "lod2_tris": 691,
+      "height": 18.48287582397461,
+      "radius": 3.394106038979003
+    },
+    "silver_fir_06": {
+      "species": "fir",
+      "cards": 422,
+      "source_tris": 61040,
+      "lod0_tris": 11811,
+      "lod1_tris": 2669,
+      "lod2_tris": 676,
+      "height": 14.952174186706543,
+      "radius": 3.598761542577697
+    },
+    "pine_sapling_medium_a": {
+      "species": "pine",
+      "cards": 670,
+      "source_tris": 19137,
+      "lod0_tris": 10558,
+      "lod1_tris": 3483,
+      "lod2_tris": 776,
+      "height": 11.782905578613281,
+      "radius": 2.8880397724184546
+    },
+    "pine_sapling_medium_b": {
+      "species": "pine",
+      "cards": 475,
+      "source_tris": 14865,
+      "lod0_tris": 8999,
+      "lod1_tris": 2771,
+      "lod2_tris": 640,
+      "height": 9.666600227355957,
+      "radius": 2.900764511951233
+    },
+    "pine_sapling_medium_c": {
+      "species": "pine",
+      "cards": 405,
+      "source_tris": 11301,
+      "lod0_tris": 8418,
+      "lod1_tris": 2564,
+      "lod2_tris": 520,
+      "height": 6.913527965545654,
+      "radius": 2.1933080287105593
+    },
+    "fir_sapling_medium_a": {
+      "species": "fir",
+      "cards": 263,
+      "source_tris": 17082,
+      "lod0_tris": 6996,
+      "lod1_tris": 1884,
+      "lod2_tris": 304,
+      "height": 8.957746505737305,
+      "radius": 3.1369620163145737
+    },
+    "fir_sapling_medium_b": {
+      "species": "fir",
+      "cards": 163,
+      "source_tris": 9362,
+      "lod0_tris": 6196,
+      "lod1_tris": 1404,
+      "lod2_tris": 160,
+      "height": 7.959303379058838,
+      "radius": 2.445270201918304
+    },
+    "fir_sapling_medium_c": {
+      "species": "fir",
+      "cards": 166,
+      "source_tris": 9528,
+      "lod0_tris": 6220,
+      "lod1_tris": 1420,
+      "lod2_tris": 264,
+      "height": 6.038041114807129,
+      "radius": 2.5410322736670286
+    }
+  },
+  "lods": [
+    {
+      "trunk_tris": 3000,
+      "branch_tris": 4000,
+      "min_branch_m": 0.0,
+      "dead_branch_tris": 1200,
+      "card_keep": 1.0,
+      "card_scale": 1.0
+    },
+    {
+      "trunk_tris": 450,
+      "branch_tris": 700,
+      "min_branch_m": 2.5,
+      "dead_branch_tris": 0,
+      "card_keep": 0.55,
+      "card_scale": 1.3
+    },
+    {
+      "trunk_tris": 100,
+      "branch_tris": 0,
+      "min_branch_m": 0.0,
+      "dead_branch_tris": 0,
+      "card_keep": 0.16,
+      "card_scale": 1.95
+    },
+    {
+      "impostor": "3 crossed/top quads"
+    }
+  ]
+}
