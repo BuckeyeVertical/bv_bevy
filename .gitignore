@@ -7,3 +7,6 @@ assets/models/Drone.glb
 assets/models/Tent.glb
 assets/models/polo_shirt_mannequin.glb
 .DS_Store
+
+# Extracted Poly Haven downloads and Blender bake intermediates (multi-GB).
+assets/raw/

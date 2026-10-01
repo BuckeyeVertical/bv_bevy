@@ -38,6 +38,12 @@ fn initial_debug_camera_transform() -> Transform {
     ) {
         let center = Vec3::new(-45.0, 0.0, -175.0);
         Transform::from_xyz(center.x, 1_250.0, center.z).looking_at(center, Vec3::NEG_Z)
+    } else if matches!(
+        std::env::var("BV_WORLD_PROFILE").as_deref(),
+        Ok("provingGround") | Ok("proving_ground")
+    ) {
+        // Overlooking the launch pad from above the meadow, the yard on the left.
+        Transform::from_xyz(-38.0, 24.0, -46.0).looking_at(Vec3::new(10.0, 0.0, 12.0), Vec3::Y)
     } else {
         Transform::from_xyz(6.0, 5.0, 8.0).looking_at(Vec3::ZERO, Vec3::Y)
     }

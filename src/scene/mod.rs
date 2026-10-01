@@ -15,7 +15,17 @@ impl Plugin for SimulationScenePlugin {
         app.insert_resource(ClearColor(Color::srgb(0.52, 0.72, 0.92)))
             .add_systems(Startup, setup_scene)
             .add_systems(Update, vehicle::apply_render_layer);
+        if proving_ground_selected() {
+            // Brings its own sky, sun, fog and exposure.
+            app.add_plugins(environment::proving_ground::ProvingGroundPlugin);
+        } else {
+            app.add_systems(Startup, spawn_default_sun);
+        }
     }
+}
+
+fn proving_ground_selected() -> bool {
+    std::env::var("BV_WORLD_PROFILE").is_ok_and(|profile| environment::proving_ground::is_selected(&profile))
 }
 
 fn setup_scene(
@@ -34,7 +44,9 @@ fn setup_scene(
             Visibility::Hidden,
         ))
         .with_children(|parent| vehicle::spawn(parent, &asset_server));
+}
 
+fn spawn_default_sun(mut commands: Commands) {
     commands.spawn((
         DirectionalLight {
             illuminance: 15_000.0,

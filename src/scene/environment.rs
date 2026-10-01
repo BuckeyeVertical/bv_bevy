@@ -1,5 +1,6 @@
 mod bv_mission;
 mod mission_test;
+pub(super) mod proving_ground;
 mod suas;
 mod suas_layout;
 
@@ -56,6 +57,8 @@ pub(super) fn spawn(
         Ok("SUAS") | Ok("suas") => {
             suas::spawn(commands, asset_server, meshes, materials);
         }
+        // Spawned by ProvingGroundPlugin once its assets have loaded.
+        Ok(profile) if proving_ground::is_selected(profile) => {}
         Ok(profile) => panic!("unsupported BV_WORLD_PROFILE: {profile}"),
         Err(error) => panic!("cannot read BV_WORLD_PROFILE: {error}"),
     }
