@@ -114,6 +114,7 @@ fn wait_for_assets(
 #[allow(clippy::too_many_arguments)]
 fn spawn_world(
     mut commands: Commands,
+    asset_server: Res<AssetServer>,
     config: Res<ProvingGroundConfig>,
     layout: Res<SiteLayout>,
     env: Res<EnvironmentAssets>,
@@ -127,5 +128,6 @@ fn spawn_world(
     terrain::spawn(&mut commands, &config, &layout, &plan, &env, &mut meshes, &mut terrain_materials, &mut materials);
     vegetation::spawn(&mut commands, &config, &plan, &library, &mut meshes);
     structures::spawn(&mut commands, &config, &layout, &library, &env, &mut meshes, &mut materials);
+    structures::spawn_scan_targets(&mut commands, &config, &asset_server);
     info!("proving ground: world generated in {:.1?}", started.elapsed());
 }

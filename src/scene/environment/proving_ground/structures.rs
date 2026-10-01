@@ -50,6 +50,20 @@ impl Placer<'_> {
     }
 }
 
+/// Mission scan targets. North/east are relative to PX4 home, which Bevy puts at
+/// the origin (Gazebo ENU x=east, y=north becomes Bevy (-north, up, -east)).
+pub fn spawn_scan_targets(commands: &mut Commands, config: &ProvingGroundConfig, asset_server: &AssetServer) {
+    for target in &config.site.scan_targets {
+        let scene = asset_server.load(GltfAssetLabel::Scene(0).from_asset(target.asset));
+        commands.spawn((
+            Name::new(format!("Scan target: {}", target.name)),
+            WorldAssetRoot(scene),
+            Transform::from_xyz(-target.north, target.ground_clearance, -target.east)
+                .with_rotation(Quat::from_rotation_y(target.heading) * Quat::from_rotation_x(target.tilt)),
+        ));
+    }
+}
+
 pub fn spawn(
     commands: &mut Commands,
     config: &ProvingGroundConfig,

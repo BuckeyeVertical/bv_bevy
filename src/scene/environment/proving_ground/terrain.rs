@@ -387,7 +387,9 @@ fn spawn_launch_pad(
     materials: &mut Assets<StandardMaterial>,
 ) {
     let half = layout.launch_pad_size * 0.5;
-    let slab = slab_mesh(Vec2::splat(half), 0.3, 0.06, 0.03, 47, 3.2, |p| p);
+    // Flush with the ground: Gazebo lands the drone on the z = 0 plane, so a
+    // raised pad would swallow the landing gear.
+    let slab = slab_mesh(Vec2::splat(half), 0.3, 0.008, 0.03, 47, 3.2, |p| p);
     commands.spawn((
         Name::new("Launch pad"),
         Mesh3d(meshes.add(slab)),
@@ -400,7 +402,7 @@ fn spawn_launch_pad(
         depth_bias: 2.0,
         ..default()
     });
-    let y = 0.063;
+    let y = 0.01;
     let ring = meshes.add(Annulus::new(half * 0.72, half * 0.8).mesh().resolution(64));
     commands.spawn((
         Name::new("Launch pad ring"),

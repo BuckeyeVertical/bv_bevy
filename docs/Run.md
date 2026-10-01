@@ -13,7 +13,8 @@ docker compose -f gazebo/compose.px4.yaml up
 
 ```bash
 cd ~/Code/bv_bevy
-./run_suas.sh
+export BV_ENV_QUALITY=low 
+./run_proving_ground.sh
 ```
 
 ## 3. MAVROS

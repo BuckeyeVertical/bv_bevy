@@ -66,6 +66,22 @@ pub struct SiteConfig {
     pub pole_offset: f32,
     /// Poly Haven poles are authored ~6.1 m; rural distribution poles are ~8-9 m.
     pub pole_scale: f32,
+    /// Matches bv_core config/proving_ground_params.yaml (scan box 5-45 m N, 0-45 m E).
+    pub scan_targets: Vec<ScanTarget>,
+}
+
+/// A vision target for the scan phase (same models as the missionTest world).
+#[derive(Clone, Debug)]
+pub struct ScanTarget {
+    pub name: &'static str,
+    pub asset: &'static str,
+    /// Offset from the launch pad / PX4 home, metres north and east.
+    pub north: f32,
+    pub east: f32,
+    pub heading: f32,
+    /// Rotation about X (the mannequin model is authored standing up).
+    pub tilt: f32,
+    pub ground_clearance: f32,
 }
 
 #[derive(Clone, Debug)]
@@ -196,6 +212,26 @@ impl ProvingGroundConfig {
                 pole_spacing: 34.0,
                 pole_offset: 6.5,
                 pole_scale: 1.38,
+                scan_targets: vec![
+                    ScanTarget {
+                        name: "mannequin",
+                        asset: "models/polo_shirt_mannequin_optimized.glb",
+                        north: 18.0,
+                        east: 14.0,
+                        heading: 0.45,
+                        tilt: std::f32::consts::FRAC_PI_2,
+                        ground_clearance: 0.17,
+                    },
+                    ScanTarget {
+                        name: "tent",
+                        asset: "models/Tent_optimized.glb",
+                        north: 36.0,
+                        east: 34.0,
+                        heading: 1.35,
+                        tilt: 0.0,
+                        ground_clearance: 0.0,
+                    },
+                ],
             },
             terrain: TerrainConfig {
                 half_extent: 900.0,

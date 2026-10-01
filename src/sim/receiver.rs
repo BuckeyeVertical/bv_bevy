@@ -12,7 +12,10 @@ use std::{
 
 use bevy::prelude::*;
 
-use super::{SimSnapshot, gazebo_pose_to_bevy};
+use super::{
+    SimSnapshot, gazebo_pose_to_bevy,
+    smoothing::{PlaybackClock, PoseHistory, update_smoothed_poses},
+};
 
 const DEFAULT_ENDPOINT: &str = "127.0.0.1:7001";
 const ENDPOINT_ENV: &str = "BV_SIM_ENDPOINT";
@@ -57,18 +60,23 @@ impl Plugin for SimReceiverPlugin {
         app.insert_resource(SimReceiver::spawn(self.endpoint.clone()))
             .init_resource::<AppliedSimState>()
             .init_resource::<ReportedReceiverStatus>()
+            .init_resource::<PlaybackClock>()
+            .configure_sets(Update, SimUpdateSet::Smooth.after(SimUpdateSet::ApplySnapshot))
             .add_systems(
                 Update,
                 (report_receiver_status, apply_latest_snapshot)
                     .chain()
                     .in_set(SimUpdateSet::ApplySnapshot),
-            );
+            )
+            .add_systems(Update, update_smoothed_poses.in_set(SimUpdateSet::Smooth));
     }
 }
 
 #[derive(SystemSet, Debug, Clone, Copy, Eq, Hash, PartialEq)]
 pub enum SimUpdateSet {
     ApplySnapshot,
+    /// Render-only interpolation of entities that carry a `PoseHistory`.
+    Smooth,
 }
 
 #[derive(Resource, Debug, Default)]
@@ -205,7 +213,7 @@ fn report_receiver_status(
 fn apply_latest_snapshot(
     receiver: Res<SimReceiver>,
     mut applied: ResMut<AppliedSimState>,
-    mut entities: Query<(&SimEntity, &mut Transform, &mut Visibility)>,
+    mut entities: Query<(&SimEntity, &mut Transform, &mut Visibility, Option<&mut PoseHistory>)>,
 ) {
     let Some(snapshot) = receiver.take_latest() else {
         return;
@@ -218,7 +226,8 @@ fn apply_latest_snapshot(
         return;
     }
 
-    for (sim_entity, mut transform, mut visibility) in &mut entities {
+    let sim_time_s = snapshot.sim_time_ns() as f64 * 1e-9;
+    for (sim_entity, mut transform, mut visibility, history) in &mut entities {
         let Some(entity_state) = snapshot.entity(sim_entity.id()) else {
             *visibility = Visibility::Hidden;
             continue;
@@ -226,6 +235,9 @@ fn apply_latest_snapshot(
 
         *transform = gazebo_pose_to_bevy(entity_state.position_m(), entity_state.orientation());
         *visibility = Visibility::Visible;
+        if let Some(mut history) = history {
+            history.record(sim_time_s, *transform);
+        }
     }
 
     applied.record(&snapshot);

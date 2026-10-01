@@ -6,7 +6,7 @@ use bevy::{
     window::{CursorGrabMode, CursorOptions, PrimaryWindow},
 };
 
-use crate::sim::{SimEntity, SimUpdateSet, VEHICLE_ID};
+use crate::sim::{SimEntity, SimUpdateSet, SmoothedPose, VEHICLE_ID};
 
 const PITCH_LIMIT: f32 = FRAC_PI_2 - 0.01;
 const FOLLOW_DISTANCE: f32 = 10.0;
@@ -54,7 +54,7 @@ impl Plugin for DebugCameraPlugin {
                 update_debug_camera,
             )
                 .chain()
-                .after(SimUpdateSet::ApplySnapshot),
+                .after(SimUpdateSet::Smooth),
         );
     }
 }
@@ -111,15 +111,17 @@ fn update_debug_camera(
     mouse_motion: Res<AccumulatedMouseMotion>,
     cursor_options: Single<&CursorOptions, With<PrimaryWindow>>,
     camera: Single<(&mut Transform, &DebugCamera)>,
-    sim_entities: Query<(&SimEntity, &Transform, &Visibility), Without<DebugCamera>>,
+    sim_entities: Query<(&SimEntity, &Transform, Option<&SmoothedPose>, &Visibility), Without<DebugCamera>>,
 ) {
     let (mut transform, settings) = camera.into_inner();
 
     if settings.mode == DebugCameraMode::Follow
-        && let Some((_, vehicle, _)) = sim_entities.iter().find(|(entity, _, visibility)| {
+        && let Some((_, exact, smoothed, _)) = sim_entities.iter().find(|(entity, _, _, visibility)| {
             entity.id() == VEHICLE_ID && **visibility != Visibility::Hidden
         })
     {
+        // Follow the same smoothed pose the drone model is drawn at.
+        let vehicle = smoothed.map_or(exact, |pose| &pose.0);
         let desired = follow_transform(vehicle);
         let response = 1.0 - (-FOLLOW_RESPONSE * time.delta_secs()).exp();
         transform.translation = transform.translation.lerp(desired.translation, response);

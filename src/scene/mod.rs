@@ -3,7 +3,7 @@ mod vehicle;
 
 use bevy::prelude::*;
 
-use crate::sim::{SimEntity, VEHICLE_ID};
+use crate::sim::{PoseHistory, SimEntity, SimUpdateSet, SmoothedPose, VEHICLE_ID};
 
 pub const VEHICLE_RENDER_LAYER: usize = 1;
 pub const WORLD_DEBUG_RENDER_LAYER: usize = 2;
@@ -14,7 +14,8 @@ impl Plugin for SimulationScenePlugin {
     fn build(&self, app: &mut App) {
         app.insert_resource(ClearColor(Color::srgb(0.52, 0.72, 0.92)))
             .add_systems(Startup, setup_scene)
-            .add_systems(Update, vehicle::apply_render_layer);
+            .add_systems(Update, vehicle::apply_render_layer)
+            .add_systems(Update, vehicle::follow_smoothed_pose.after(SimUpdateSet::Smooth));
         if proving_ground_selected() {
             // Brings its own sky, sun, fog and exposure.
             app.add_plugins(environment::proving_ground::ProvingGroundPlugin);
@@ -40,6 +41,8 @@ fn setup_scene(
         .spawn((
             Name::new("Gazebo vehicle"),
             SimEntity::new(VEHICLE_ID),
+            PoseHistory::default(),
+            SmoothedPose::default(),
             Transform::default(),
             Visibility::Hidden,
         ))
