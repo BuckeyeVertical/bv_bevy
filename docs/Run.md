@@ -1,37 +1,63 @@
-# Run the Mission
+# Run a World
 
-Run these commands in four terminals, in order.
+Bevy draws the world and the drone's camera. Pick a world and run it from
+`~/Code/bv_bevy`. To fly a mission in it, see [Run_ROS.md](Run_ROS.md).
 
-## 1. Gazebo and PX4
+Every world also takes `--screenshot <png>`: save one frame once it has
+loaded, then exit.
 
-```bash
-cd ~/Code/bv_bevy
-docker compose -f gazebo/compose.px4.yaml up
-```
+## minimal
 
-## 2. Bevy
-
-```bash
-cd ~/Code/bv_bevy
-export BV_ENV_QUALITY=low 
-./run_proving_ground.sh
-```
-
-## 3. MAVROS
+Flat grass with a grid, a landing pad and three obstacles.
 
 ```bash
-docker start bv-mission
-docker exec -it bv-mission bash
-ros2 launch mavros px4.launch \
-  fcu_url:=udp://:14540@host.docker.internal:14580
+cargo run -- minimal
 ```
 
-## 4. Mission
+## gazebo_boxes
+
+Coloured boxes where the objects of the PX4 Gazebo world stand, for checking
+that Bevy and Gazebo line up.
 
 ```bash
-docker exec -it bv-mission bash
-export BV_MISSION_CONFIG=sim_params.yaml
-ros2 launch bv_core mission.launch.py
+cargo run -- gazebo_boxes
 ```
 
-Open <http://localhost:8765> in a browser on the host machine.
+## grass_targets
+
+Grass with a mannequin and a tent along a scan line: a quick vision test.
+
+```bash
+cargo run -- grass_targets
+```
+
+## suas_2026
+
+The SUAS 2026 competition field: boundaries, lap route, targets and trees.
+
+```bash
+cargo run -- suas_2026
+```
+
+## forest
+
+A forest clearing with a launch pad, road, shed and power line.
+
+```bash
+cargo run -- forest
+```
+
+- `--quality low|medium|high` trades detail for frame rate (default `medium`).
+- `--no-shadows` turns sun shadows off.
+- `--tour <dir>` screenshots fixed viewpoints with their frame times, then exits.
+
+## satellite_map
+
+Real satellite imagery and terrain, streamed from the internet and cached in
+`.cache/`.
+
+```bash
+cargo run -- satellite_map
+```
+
+- `--lat <deg> --lon <deg>` centres the map (default Tuttle Park, Columbus).
