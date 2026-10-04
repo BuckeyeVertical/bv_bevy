@@ -1,4 +1,5 @@
 mod bv_mission;
+pub(super) mod geo_tiles;
 mod mission_test;
 pub(super) mod proving_ground;
 mod suas;
@@ -57,6 +58,8 @@ pub(super) fn spawn(
         Ok("SUAS") | Ok("suas") => {
             suas::spawn(commands, asset_server, meshes, materials);
         }
+        // Streamed by GeoTilesPlugin around the debug camera.
+        Ok(profile) if geo_tiles::is_selected(profile) => {}
         // Spawned by ProvingGroundPlugin once its assets have loaded.
         Ok(profile) if proving_ground::is_selected(profile) => {}
         Ok(profile) => panic!("unsupported BV_WORLD_PROFILE: {profile}"),

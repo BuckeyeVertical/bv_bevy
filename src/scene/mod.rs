@@ -22,7 +22,15 @@ impl Plugin for SimulationScenePlugin {
         } else {
             app.add_systems(Startup, spawn_default_sun);
         }
+        if geo_tiles_selected() {
+            // Streams real-world terrain around the debug camera.
+            app.add_plugins(environment::geo_tiles::GeoTilesPlugin);
+        }
     }
+}
+
+fn geo_tiles_selected() -> bool {
+    std::env::var("BV_WORLD_PROFILE").is_ok_and(|profile| environment::geo_tiles::is_selected(&profile))
 }
 
 fn proving_ground_selected() -> bool {
