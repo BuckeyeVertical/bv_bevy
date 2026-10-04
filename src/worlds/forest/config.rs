@@ -57,7 +57,7 @@ pub struct SiteConfig {
     pub pole_offset: f32,
     /// Poly Haven poles are authored ~6.1 m; rural distribution poles are ~8-9 m.
     pub pole_scale: f32,
-    /// Matches bv_core config/proving_ground_params.yaml (scan box 5-45 m N, 0-45 m E).
+    /// Inside the scan box north-east of the pad (5-45 m N, 0-45 m E).
     pub scan_targets: Vec<ScanTarget>,
 }
 

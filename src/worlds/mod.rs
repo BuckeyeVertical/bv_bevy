@@ -66,8 +66,8 @@ impl WorldChoice {
         }
     }
 
-    /// Where PX4 believes the world origin is. The bv_ws mission config for
-    /// the forest flies around the SUAS field home.
+    /// Where PX4 believes the world origin is. The forest has no real
+    /// location, so it borrows the SUAS field's.
     pub fn px4_home(&self) -> GeoPoint {
         match self {
             Self::SatelliteMap(options) => GeoPoint::new(options.lat, options.lon),

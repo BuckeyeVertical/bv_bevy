@@ -97,8 +97,8 @@ impl PinholeIntrinsics {
 }
 
 /// The real camera (3840x2160, fx 2296.4) at half resolution: same shape and
-/// field of view, so the detector sees what it will see in flight. bv_core's
-/// filtering_params.yaml (simulation block) holds the matching intrinsics.
+/// field of view, so a detector sees what it will see in flight. Each frame
+/// carries these intrinsics (see docs/camera_frame_v1.md).
 const SIM_WIDTH: u32 = 1920;
 const SIM_HEIGHT: u32 = 1080;
 const SIM_HORIZONTAL_FOV: f32 = 1.392_727_1; // 79.8 deg: 2 atan(960 / 1148.2)

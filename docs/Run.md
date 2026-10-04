@@ -2,13 +2,16 @@
 
 Each world takes two terminals from `~/Code/bv_bevy`: PX4 + Gazebo (the drone)
 and Bevy (the world and the drone's camera). Start PX4 in terminal 1 first, then Bevy in terminal 2. When the drone
-appears in the Bevy window it is ready; start MAVROS and the mission with
-[Run_ROS.md](Run_ROS.md) steps 3 and 4, using the mission config listed.
+appears in the Bevy window it is ready to fly: connect your flight stack to
+PX4 over MAVLink and read the onboard camera from `127.0.0.1:7002`
+([camera_frame_v1.md](camera_frame_v1.md)).
+
+In the Bevy window the camera follows the drone. Press `F` for a free camera;
+left click enables mouse look, and `W/A/S/D`, `E/Q` and Shift move it.
 
 ## suas_2026
 
 The SUAS 2026 competition field: boundaries, lap route, targets and trees.
-Mission config: `sim_params.yaml`.
 
 Terminal 1:
 
@@ -25,7 +28,6 @@ cargo run -- suas_2026
 ## forest
 
 A forest clearing with a launch pad, road, shed and power line.
-Mission config: `proving_ground_params.yaml`.
 
 Terminal 1:
 
@@ -45,7 +47,7 @@ cargo run -- forest
 ## satellite_map
 
 Real satellite imagery and terrain, streamed from the internet and cached in
-`.cache/`. There is no mission config for it yet.
+`.cache/`.
 
 Terminal 1:
 
