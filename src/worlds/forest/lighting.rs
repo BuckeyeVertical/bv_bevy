@@ -17,10 +17,10 @@ use bevy::{
 };
 use serde::Deserialize;
 
-use super::{assets::EnvironmentAssets, config::ProvingGroundConfig, layout::compass_direction};
+use super::{assets::EnvironmentAssets, config::ForestConfig, layout::compass_direction};
 
 /// Metadata written by tools/blender/hdri_to_cubemap.py.
-const SKY_META: &str = include_str!("../../../../assets/environment/sky/meadow_2.json");
+const SKY_META: &str = include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/assets/forest/sky/meadow_2.json"));
 
 #[derive(Deserialize)]
 struct SkyMeta {
@@ -46,7 +46,7 @@ impl SkyOrientation {
     }
 }
 
-pub fn spawn_sun(commands: &mut Commands, config: &ProvingGroundConfig, sky: &SkyOrientation) {
+pub fn spawn_sun(commands: &mut Commands, config: &ForestConfig, sky: &SkyOrientation) {
     let lighting = &config.lighting;
     commands.insert_resource(DirectionalLightShadowMap { size: lighting.shadow_map_size });
     // The IBL provides all ambient light; a flat ambient term would wash out shadows.
@@ -82,7 +82,7 @@ pub fn spawn_sun(commands: &mut Commands, config: &ProvingGroundConfig, sky: &Sk
 pub fn configure_cameras(
     mut commands: Commands,
     cameras: Query<Entity, Added<Camera3d>>,
-    config: Res<ProvingGroundConfig>,
+    config: Res<ForestConfig>,
     env: Res<EnvironmentAssets>,
     sky: Res<SkyOrientation>,
 ) {

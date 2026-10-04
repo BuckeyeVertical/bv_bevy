@@ -16,7 +16,7 @@ use bevy::{
 
 use super::{
     assets::{EnvironmentAssets, MeshLibrary},
-    config::ProvingGroundConfig,
+    config::ForestConfig,
     layout::{yaw_towards, SiteLayout},
     scatter::Rng,
     vegetation::{lod_range, SpawnBatches},
@@ -52,7 +52,7 @@ impl Placer<'_> {
 
 /// Mission scan targets. North/east are relative to PX4 home, which Bevy puts at
 /// the origin (Gazebo ENU x=east, y=north becomes Bevy (-north, up, -east)).
-pub fn spawn_scan_targets(commands: &mut Commands, config: &ProvingGroundConfig, asset_server: &AssetServer) {
+pub fn spawn_scan_targets(commands: &mut Commands, config: &ForestConfig, asset_server: &AssetServer) {
     for target in &config.site.scan_targets {
         let scene = asset_server.load(GltfAssetLabel::Scene(0).from_asset(target.asset));
         commands.spawn((
@@ -66,7 +66,7 @@ pub fn spawn_scan_targets(commands: &mut Commands, config: &ProvingGroundConfig,
 
 pub fn spawn(
     commands: &mut Commands,
-    config: &ProvingGroundConfig,
+    config: &ForestConfig,
     layout: &SiteLayout,
     library: &MeshLibrary,
     env: &EnvironmentAssets,
@@ -262,7 +262,7 @@ const CONDUCTORS: [Vec3; 3] = [Vec3::new(-0.52, 5.86, 0.0), Vec3::new(0.0, 6.02,
 
 fn spawn_power_line(
     commands: &mut Commands,
-    config: &ProvingGroundConfig,
+    config: &ForestConfig,
     layout: &SiteLayout,
     meshes: &mut Assets<Mesh>,
     materials: &mut Assets<StandardMaterial>,

@@ -1,8 +1,14 @@
+//! `grass_targets`: grass with a mannequin and a tent along a scan line.
+
 use std::f32::consts::FRAC_PI_2;
 
 use bevy::prelude::*;
 
+use super::DebugCameraStart;
+use super::shared::{DaylightPlugin, spawn_ground};
 use crate::sim::gazebo_position_to_bevy;
+
+const GROUND_SIZE: f32 = 320.0;
 
 const FIRST_TARGET: Vec3 = Vec3::new(0.0, 10.0, 0.0);
 const TARGET_STEP: Vec3 = Vec3::new(17.6777, 17.6777, 0.0);
@@ -36,7 +42,27 @@ struct Target {
     ground_clearance_m: f32,
 }
 
-pub(super) fn spawn(commands: &mut Commands, asset_server: &AssetServer) {
+pub struct GrassTargetsPlugin;
+
+impl Plugin for GrassTargetsPlugin {
+    fn build(&self, app: &mut App) {
+        app.insert_resource(DebugCameraStart(Transform::from_xyz(6.0, 5.0, 8.0).looking_at(Vec3::ZERO, Vec3::Y)))
+            .add_plugins(DaylightPlugin)
+            .add_systems(Startup, (spawn_world, super::ready));
+    }
+}
+
+fn spawn_world(
+    mut commands: Commands,
+    asset_server: Res<AssetServer>,
+    mut meshes: ResMut<Assets<Mesh>>,
+    mut materials: ResMut<Assets<StandardMaterial>>,
+) {
+    spawn_ground(&mut commands, &asset_server, &mut meshes, &mut materials, GROUND_SIZE);
+    spawn_targets(&mut commands, &asset_server);
+}
+
+fn spawn_targets(commands: &mut Commands, asset_server: &AssetServer) {
     for target in TARGETS {
         let scene = asset_server.load(GltfAssetLabel::Scene(0).from_asset(target.asset));
         let gazebo_position = scan_position(target.scan_index);

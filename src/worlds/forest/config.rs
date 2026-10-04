@@ -1,4 +1,4 @@
-//! Tunable dimensions, densities, and quality settings for the proving ground.
+//! Tunable dimensions, densities, and quality settings for the forest.
 //!
 //! Everything that shapes the world lives here so placement code stays free of
 //! magic numbers. Distances are metres (1 Bevy unit = 1 m). Bevy's frame follows
@@ -8,31 +8,22 @@ use std::ops::Range;
 
 use bevy::prelude::*;
 
-/// Rendering quality preset, chosen with `BV_ENV_QUALITY=low|medium|high`.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+/// Rendering quality preset, chosen with `--quality low|medium|high`.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, clap::ValueEnum)]
 pub enum Quality {
     Low,
+    #[default]
     Medium,
     High,
 }
 
-impl Quality {
-    pub fn from_env() -> Self {
-        match std::env::var("BV_ENV_QUALITY").as_deref() {
-            Ok("low") => Self::Low,
-            Ok("high") => Self::High,
-            _ => Self::Medium,
-        }
-    }
-}
-
 #[derive(Resource, Clone, Debug)]
-pub struct ProvingGroundConfig {
+pub struct ForestConfig {
     pub seed: u64,
     pub quality: Quality,
     pub site: SiteConfig,
     pub terrain: TerrainConfig,
-    pub forest: ForestConfig,
+    pub forest: TreeConfig,
     pub ground_cover: GroundCoverConfig,
     pub lod: LodConfig,
     pub lighting: LightingConfig,
@@ -70,7 +61,7 @@ pub struct SiteConfig {
     pub scan_targets: Vec<ScanTarget>,
 }
 
-/// A vision target for the scan phase (same models as the missionTest world).
+/// A vision target for the scan phase (same models as the grass_targets world).
 #[derive(Clone, Debug)]
 pub struct ScanTarget {
     pub name: &'static str,
@@ -99,7 +90,7 @@ pub struct TerrainConfig {
 }
 
 #[derive(Clone, Debug)]
-pub struct ForestConfig {
+pub struct TreeConfig {
     /// Mean spacing of trees in dense forest (Poisson-disk radius).
     pub dense_spacing: f32,
     /// Spacing in the transition band (sparser, more saplings).
@@ -153,7 +144,7 @@ pub struct LightingConfig {
     pub ibl_intensity: f32,
     pub exposure_ev100: f32,
     pub fog_visibility: f32,
-    /// `BV_ENV_SHADOWS=0` turns sun shadows off for very weak GPUs.
+    /// `--no-shadows` turns sun shadows off for very weak GPUs.
     pub shadows: bool,
     pub shadow_distance: f32,
     pub shadow_cascades: usize,
@@ -162,7 +153,7 @@ pub struct LightingConfig {
     pub msaa_samples: u32,
 }
 
-impl ProvingGroundConfig {
+impl ForestConfig {
     pub fn new(quality: Quality) -> Self {
         let (lod, shadow_distance, shadow_cascades, shadow_map_size) = match quality {
             Quality::Low => ([35.0, 85.0, 150.0], 100.0, 2, 1024),
@@ -241,7 +232,7 @@ impl ProvingGroundConfig {
                 hill_amplitude: 2.6,
                 flat_margin: 10.0,
             },
-            forest: ForestConfig {
+            forest: TreeConfig {
                 dense_spacing: 4.7,
                 transition_spacing: 13.0,
                 far_spacing: 6.5,
@@ -268,15 +259,15 @@ impl ProvingGroundConfig {
                 flight_margin: 40.0,
             },
             lighting: LightingConfig {
-                sky_cubemap: "environment/sky/meadow_2_cubemap.ktx2",
-                ibl_cubemap: "environment/sky/meadow_2_ibl.ktx2",
+                sky_cubemap: "forest/sky/meadow_2_cubemap.ktx2",
+                ibl_cubemap: "forest/sky/meadow_2_ibl.ktx2",
                 sun_azimuth_deg: 222.0,
                 sun_illuminance_lux: 82_000.0,
                 sky_brightness: 10_000.0,
                 ibl_intensity: 5_200.0,
                 exposure_ev100: 14.4,
                 fog_visibility: 2_600.0,
-                shadows: std::env::var("BV_ENV_SHADOWS").map_or(true, |v| v != "0"),
+                shadows: true,
                 shadow_distance,
                 shadow_cascades,
                 shadow_map_size,

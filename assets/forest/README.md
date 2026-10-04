@@ -1,6 +1,6 @@
 # Proving-ground runtime assets
 
-Runtime assets for `BV_WORLD_PROFILE=provingGround` (`./run_proving_ground.sh`).
+Runtime assets for the `forest` world (`cargo run -- forest`).
 Everything here is generated from the Poly Haven downloads by the scripts in
 `tools/blender/`; the originals are extracted into `assets/raw/` (git-ignored,
 ~5 GB) and never modified.
@@ -15,7 +15,7 @@ Everything here is generated from the Poly Haven downloads by the scripts in
 | `materials/` | `terrain_albedo/normal.jpg` (5-layer arrays), `asphalt_*`, `factory_wall_*` | grass004, withered_grass, Pine Forest ground textures, Gravel Road, Asphalt Floor, Factory Wall | `export_textures.py` |
 | `sky/` | `meadow_2_cubemap.ktx2`, `meadow_2.json` (sun direction) | Meadow 2 HDRI | `hdri_to_cubemap.py` |
 
-The terrain shader is `assets/shaders/proving_ground_terrain.wgsl`.
+The terrain shader is `assets/forest/terrain.wgsl`.
 
 ## Rebuilding
 
@@ -38,7 +38,7 @@ blender -b assets/raw/Barrel_01_4k/Barrel_01_4k.blend --python tools/blender/exp
 blender -b assets/raw/concrete_road_barrier_4k/concrete_road_barrier_4k.blend --python tools/blender/export_props.py -- barrier
 blender -b assets/raw/modular_electricity_poles_4k/modular_electricity_poles_4k.blend --python tools/blender/export_props.py -- poles
 blender -b --python tools/blender/export_textures.py
-blender -b --python tools/blender/hdri_to_cubemap.py -- assets/raw/sky/meadow_2_4k.hdr assets/environment/sky/meadow_2 --face 1024
+blender -b --python tools/blender/hdri_to_cubemap.py -- assets/raw/sky/meadow_2_4k.hdr assets/forest/sky/meadow_2 --face 1024
 ```
 
 ## Notes on the conversions

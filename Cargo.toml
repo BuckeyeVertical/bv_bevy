@@ -5,8 +5,9 @@ edition = "2024"
 
 [dependencies]
 bevy = { version = "0.19", features = ["jpeg"] }
-bevytiles = { git = "https://github.com/ziv/bevytiles" }
-image = { version = "0.25", default-features = false, features = ["jpeg"] }
+bevytiles = { git = "https://github.com/ziv/bevytiles", rev = "c061530c34b718e4214a38c9c8e5af7ff6ff8206" }
+clap = { version = "4", features = ["derive"] }
+image = { version = "0.25", default-features = false, features = ["jpeg", "png"] }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 

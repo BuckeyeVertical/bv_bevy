@@ -1,7 +1,9 @@
+//! The drone model, drawn wherever the simulator says the vehicle is.
+
 use bevy::{camera::visibility::RenderLayers, prelude::*};
 
-use super::VEHICLE_RENDER_LAYER;
-use crate::sim::SmoothedPose;
+use crate::camera::VEHICLE_RENDER_LAYER;
+use crate::sim::{PoseHistory, SimEntity, SimUpdateSet, SmoothedPose, VEHICLE_ID};
 
 const DRONE_SCALE: f32 = 0.001;
 /// Horizontal centre of the CAD model (m); Gazebo's x500 origin is centred too.
@@ -15,15 +17,39 @@ const DRONE_FEET_Y: f32 = 0.005_946;
 /// (centring the model's bounding box instead buried its legs ~24 cm).
 const GAZEBO_FEET_ABOVE_ORIGIN: f32 = 0.013;
 
+pub struct VehiclePlugin;
+
+impl Plugin for VehiclePlugin {
+    fn build(&self, app: &mut App) {
+        app.add_systems(Startup, spawn_vehicle)
+            .add_systems(Update, apply_render_layer)
+            .add_systems(Update, follow_smoothed_pose.after(SimUpdateSet::Smooth));
+    }
+}
+
+/// Hidden until the simulator reports the vehicle.
+fn spawn_vehicle(mut commands: Commands, asset_server: Res<AssetServer>) {
+    commands
+        .spawn((
+            Name::new("Gazebo vehicle"),
+            SimEntity::new(VEHICLE_ID),
+            PoseHistory::default(),
+            SmoothedPose::default(),
+            Transform::default(),
+            Visibility::Hidden,
+        ))
+        .with_children(|parent| spawn_visual(parent, &asset_server));
+}
+
 #[derive(Component)]
-pub(super) struct VehicleVisual;
+struct VehicleVisual;
 
 fn visual_offset() -> Transform {
     Transform::from_translation(Vec3::new(-DRONE_CENTER_X, GAZEBO_FEET_ABOVE_ORIGIN - DRONE_FEET_Y, -DRONE_CENTER_Z))
         .with_scale(Vec3::splat(DRONE_SCALE))
 }
 
-pub(super) fn spawn(parent: &mut ChildSpawnerCommands, asset_server: &AssetServer) {
+fn spawn_visual(parent: &mut ChildSpawnerCommands, asset_server: &AssetServer) {
     let scene =
         asset_server.load(GltfAssetLabel::Scene(0).from_asset("models/Drone_optimized.glb"));
 
@@ -37,7 +63,7 @@ pub(super) fn spawn(parent: &mut ChildSpawnerCommands, asset_server: &AssetServe
 
 /// Draw the drone model at the smoothed pose while its parent keeps the exact
 /// simulator pose (see `sim::smoothing`): local = exact⁻¹ · smoothed · offset.
-pub(super) fn follow_smoothed_pose(
+fn follow_smoothed_pose(
     vehicles: Query<(&Transform, &SmoothedPose, &Children), Without<VehicleVisual>>,
     mut visuals: Query<&mut Transform, With<VehicleVisual>>,
 ) {
@@ -51,7 +77,7 @@ pub(super) fn follow_smoothed_pose(
     }
 }
 
-pub(super) fn apply_render_layer(
+fn apply_render_layer(
     mut commands: Commands,
     added_meshes: Query<(Entity, &ChildOf), Added<Mesh3d>>,
     parents: Query<&ChildOf>,

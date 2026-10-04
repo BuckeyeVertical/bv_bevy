@@ -17,12 +17,12 @@ use serde::Deserialize;
 
 use super::{
     assets::MeshLibrary,
-    config::ProvingGroundConfig,
+    config::ForestConfig,
     layout::SiteLayout,
     scatter::{fbm, poisson_disk, smoothstep, value_noise, Rng, SpatialGrid},
 };
 
-const TREES_META: &str = include_str!("../../../../assets/environment/vegetation/trees.json");
+const TREES_META: &str = include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/assets/forest/vegetation/trees.json"));
 
 #[derive(Deserialize)]
 struct TreesMeta {
@@ -115,7 +115,7 @@ impl VegetationPlan {
 
 // --------------------------------------------------------------------------- planning
 
-pub fn plan(config: &ProvingGroundConfig, layout: &SiteLayout) -> VegetationPlan {
+pub fn plan(config: &ForestConfig, layout: &SiteLayout) -> VegetationPlan {
     let mut rng = Rng::new(config.seed);
     let variants = tree_variants();
     let mut trees = plan_trees(config, layout, &variants, &mut rng.fork(1));
@@ -147,7 +147,7 @@ fn pick_variant(variants: &[TreeVariant], species: Species, size: SizeClass, rng
     *rng.pick(&candidates)
 }
 
-fn plan_trees(config: &ProvingGroundConfig, layout: &SiteLayout, variants: &[TreeVariant], rng: &mut Rng) -> Vec<TreeInstance> {
+fn plan_trees(config: &ForestConfig, layout: &SiteLayout, variants: &[TreeVariant], rng: &mut Rng) -> Vec<TreeInstance> {
     let forest = &config.forest;
     let extent = Vec2::splat(forest.far_half_extent);
     let candidates = poisson_disk(-extent, extent, forest.dense_spacing * 0.92, rng);
@@ -275,7 +275,7 @@ fn push_prop(
 }
 
 fn plan_ground_cover(
-    config: &ProvingGroundConfig,
+    config: &ForestConfig,
     layout: &SiteLayout,
     trunks: &SpatialGrid,
     props: &mut Vec<PropInstance>,
@@ -476,7 +476,7 @@ impl SpawnBatches {
 
 pub fn spawn(
     commands: &mut Commands,
-    config: &ProvingGroundConfig,
+    config: &ForestConfig,
     plan: &VegetationPlan,
     library: &MeshLibrary,
     meshes: &mut Assets<Mesh>,
@@ -543,7 +543,7 @@ pub fn spawn(
         }
     }
     info!(
-        "proving ground: {} trees, {} ground-cover props, {} LOD entities, {} merged far-forest chunks",
+        "forest: {} trees, {} ground-cover props, {} LOD entities, {} merged far-forest chunks",
         plan.trees.len(),
         plan.props.len(),
         instance_count,
@@ -614,7 +614,7 @@ mod tests {
 
     #[test]
     fn flight_area_stays_open() {
-        let config = ProvingGroundConfig::new(Quality::Medium);
+        let config = ForestConfig::new(Quality::Medium);
         let layout = SiteLayout::new(&config);
         let plan = plan(&config, &layout);
         for t in &plan.trees {

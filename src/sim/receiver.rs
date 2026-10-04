@@ -50,6 +50,11 @@ impl SimReceiverPlugin {
         }
     }
 
+    /// One line for the startup summary.
+    pub fn describe(&self) -> String {
+        self.endpoint.clone()
+    }
+
     pub fn from_env() -> Self {
         Self::new(std::env::var(ENDPOINT_ENV).unwrap_or_else(|_| DEFAULT_ENDPOINT.to_owned()))
     }

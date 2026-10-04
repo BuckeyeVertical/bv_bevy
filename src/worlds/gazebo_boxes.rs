@@ -1,8 +1,36 @@
+//! `gazebo_boxes`: coloured boxes where the objects of the PX4 Gazebo world
+//! (`bv_mission.sdf`) stand, for checking that Bevy and Gazebo line up.
+
 use bevy::prelude::*;
 
+use super::DebugCameraStart;
+use super::shared::{DaylightPlugin, spawn_ground};
 use crate::sim::gazebo_position_to_bevy;
 
-pub(super) fn spawn(
+const GROUND_SIZE: f32 = 100.0;
+
+
+pub struct GazeboBoxesPlugin;
+
+impl Plugin for GazeboBoxesPlugin {
+    fn build(&self, app: &mut App) {
+        app.insert_resource(DebugCameraStart(Transform::from_xyz(6.0, 5.0, 8.0).looking_at(Vec3::ZERO, Vec3::Y)))
+            .add_plugins(DaylightPlugin)
+            .add_systems(Startup, (spawn_world, super::ready));
+    }
+}
+
+fn spawn_world(
+    mut commands: Commands,
+    asset_server: Res<AssetServer>,
+    mut meshes: ResMut<Assets<Mesh>>,
+    mut materials: ResMut<Assets<StandardMaterial>>,
+) {
+    spawn_ground(&mut commands, &asset_server, &mut meshes, &mut materials, GROUND_SIZE);
+    spawn_boxes(&mut commands, &mut meshes, &mut materials);
+}
+
+fn spawn_boxes(
     commands: &mut Commands,
     meshes: &mut Assets<Mesh>,
     materials: &mut Assets<StandardMaterial>,

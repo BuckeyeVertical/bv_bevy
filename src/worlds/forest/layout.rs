@@ -5,7 +5,7 @@
 
 use bevy::prelude::*;
 
-use super::config::ProvingGroundConfig;
+use super::config::ForestConfig;
 use super::scatter::{fbm, smoothstep};
 
 const NOISE_EDGE: u32 = 11;
@@ -34,7 +34,7 @@ pub struct SiteLayout {
 }
 
 impl SiteLayout {
-    pub fn new(config: &ProvingGroundConfig) -> Self {
+    pub fn new(config: &ForestConfig) -> Self {
         let site = &config.site;
         let road = catmull_rom(&site.road_path, 1.0);
         let mut road_length = Vec::with_capacity(road.len());
@@ -248,12 +248,12 @@ pub fn yaw_towards(dir: Vec2) -> f32 {
 
 #[cfg(test)]
 mod tests {
-    use super::super::config::{ProvingGroundConfig, Quality};
+    use super::super::config::{ForestConfig, Quality};
     use super::*;
     use std::f32::consts::TAU;
 
     fn layout() -> SiteLayout {
-        SiteLayout::new(&ProvingGroundConfig::new(Quality::Medium))
+        SiteLayout::new(&ForestConfig::new(Quality::Medium))
     }
 
     #[test]

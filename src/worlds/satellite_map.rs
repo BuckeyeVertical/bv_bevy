@@ -1,6 +1,6 @@
 //! Real-world terrain streamed with [bevytiles](https://github.com/ziv/bevytiles).
 //!
-//! Selected with `BV_WORLD_PROFILE=geoTiles`. Esri satellite imagery draped over
+//! `satellite_map`: Esri satellite imagery draped over
 //! Terrarium heightmaps, streamed around the debug camera. The world origin sits
 //! on the anchor coordinate and the terrain is lowered so the ground there is at
 //! y = 0, matching the flat-ground convention of the other profiles.
@@ -9,24 +9,22 @@
 //! including the vehicle, uses Gazebo's East-North-Up frame mapped into Bevy
 //! (`sim::gazebo_position_to_bevy`: north = -X, east = -Z). So bevytiles runs in
 //! its own frame, driven by a proxy camera, and each tile is yawed into ours.
-//!
-//! Environment:
-//! - `BV_GEO_LAT` / `BV_GEO_LON`  anchor (degrees); falls back to `PX4_HOME_LAT` / `PX4_HOME_LON`
-//! - `BV_GEO_SCREENSHOT`          save a screenshot here once loaded, then exit
 
 use std::f32::consts::FRAC_PI_2;
 
 use bevy::{
-    app::AppExit,
     camera::{PerspectiveProjection, Projection, visibility::NoAutoAabb},
     prelude::*,
-    render::view::screenshot::{Screenshot, save_to_disk},
 };
 use bevytiles::{TerrainSet, prelude::*, store::Tile};
 
+use super::shared::DaylightPlugin;
+use super::{DebugCameraStart, WorldLoad};
 use crate::camera::DebugCamera;
+use crate::geo::GeoPoint;
 
-const SKY: Color = Color::srgb(0.52, 0.72, 0.92);
+/// Matches the daylight sky so the horizon blends in.
+const FOG: Color = Color::srgb(0.52, 0.72, 0.92);
 const CAMERA_FAR: f32 = 200_000.0;
 /// Finest LOD: ~117 m tiles. Heightmaps above z15 are synthesized by bevytiles.
 const MAX_ZOOM: u8 = 18;
@@ -41,38 +39,9 @@ const EQUATOR_CIRCUMFERENCE_M: f64 = 40_075_016.686;
 /// Debug camera height above the ground once the terrain has loaded (150 ft).
 const START_AGL_M: f32 = 45.72;
 const CACHE_DIR: &str = ".cache/geo_tiles";
-/// Time after the initial load before the screenshot, so the finest tiles
-/// requested by the settled camera can arrive and pipelines can compile.
-const SCREENSHOT_SETTLE_SECS: f32 = 6.0;
-
-pub fn is_selected(profile: &str) -> bool {
-    matches!(profile, "geoTiles" | "geo_tiles")
-}
-
-/// Anchor coordinate from the environment, for the debug camera and HUD.
+/// The map centre, shown in the HUD.
 #[derive(Resource, Clone, Copy, Debug)]
-pub struct GeoAnchor {
-    pub lat: f64,
-    pub lon: f64,
-}
-
-impl GeoAnchor {
-    pub fn from_env() -> Self {
-        let read = |primary: &str, fallback: &str| -> f64 {
-            let value = std::env::var(primary)
-                .or_else(|_| std::env::var(fallback))
-                .unwrap_or_else(|_| panic!("geoTiles needs {primary} or {fallback}"));
-            value
-                .trim()
-                .parse()
-                .unwrap_or_else(|error| panic!("{primary}/{fallback} = {value:?}: {error}"))
-        };
-        Self {
-            lat: read("BV_GEO_LAT", "PX4_HOME_LAT"),
-            lon: read("BV_GEO_LON", "PX4_HOME_LON"),
-        }
-    }
-}
+struct MapCenter(GeoPoint);
 
 /// Terrain elevation (meters MSL) at the anchor, once known. Every tile is
 /// shifted down by it so the anchor ground sits at y = 0.
@@ -87,21 +56,14 @@ struct StreamingFocus;
 #[derive(Component)]
 struct GeoHud;
 
-#[derive(Resource)]
-struct ScreenshotRequest {
-    path: String,
-    loaded_at: Option<f32>,
-    taken: bool,
+pub struct SatelliteMapPlugin {
+    pub anchor: GeoPoint,
 }
 
-pub struct GeoTilesPlugin;
-
-impl Plugin for GeoTilesPlugin {
+impl Plugin for SatelliteMapPlugin {
     fn build(&self, app: &mut App) {
-        let anchor = GeoAnchor::from_env();
-        info!("geoTiles anchored at {:.6}, {:.6}", anchor.lat, anchor.lon);
-
-        let mut world = world_config(anchor.lat, anchor.lon, BASE_ZOOM);
+        let anchor = self.anchor;
+        let mut world = world_config(anchor.latitude, anchor.longitude, BASE_ZOOM);
         world.max_zoom = MAX_ZOOM;
         world.skirt_overlap = [1.01; ZOOM_LEVELS];
         // Put the anchor coordinate at the user-space origin, where the
@@ -110,12 +72,16 @@ impl Plugin for GeoTilesPlugin {
             world_offset: -world.origin_offset,
         };
 
-        app.insert_resource(ClearColor(SKY))
-            .insert_resource(anchor)
+        // Just south of home (north is -X), looking north; raised to 150 ft
+        // AGL once the terrain under it has loaded.
+        let camera = Transform::from_xyz(120.0, START_AGL_M, 0.0).looking_at(Vec3::new(-500.0, 0.0, 0.0), Vec3::Y);
+        app.insert_resource(DebugCameraStart(camera))
+            .add_plugins(DaylightPlugin)
+            .insert_resource(MapCenter(anchor))
             .insert_resource(world)
             .insert_resource(terrain_anchor)
             .insert_resource(RenderingConfig {
-                fog_color: SKY,
+                fog_color: FOG,
                 fog_start: 8_000.0,
                 fog_end: 26_000.0,
                 ambient: Color::srgb(0.78, 0.78, 0.78),
@@ -144,15 +110,6 @@ impl Plugin for GeoTilesPlugin {
                     .after(TerrainSet::Status),
             )
             .add_systems(Update, update_hud.after(TerrainSet::Status));
-
-        if let Ok(path) = std::env::var("BV_GEO_SCREENSHOT") {
-            app.insert_resource(ScreenshotRequest {
-                path,
-                loaded_at: None,
-                taken: false,
-            })
-            .add_systems(Update, take_screenshot_when_loaded.after(place_tiles));
-        }
     }
 }
 
@@ -254,6 +211,7 @@ fn resolve_home_elevation(
     world: Res<WorldConfig>,
     anchor: Res<TerrainAnchor>,
     mut camera: Single<&mut Transform, With<DebugCamera>>,
+    mut next: ResMut<NextState<WorldLoad>>,
 ) {
     if home.0.is_some() || status.loading {
         return;
@@ -261,11 +219,12 @@ fn resolve_home_elevation(
     let Some(height) = terrain_height(&grids, &world, &anchor, Vec3::ZERO) else {
         return;
     };
-    info!("geoTiles home elevation {height:.1} m MSL");
+    info!("satellite_map: home elevation {height:.1} m MSL");
     home.0 = Some(height);
 
     let ground = terrain_height(&grids, &world, &anchor, camera.translation).unwrap_or(height);
     camera.translation.y = ground - height + START_AGL_M;
+    next.set(WorldLoad::Ready);
 }
 
 /// bevytiles gives each tile an AABB spanning the full height column, but
@@ -325,7 +284,7 @@ fn spawn_hud(mut commands: Commands) {
 }
 
 fn update_hud(
-    geo: Res<GeoAnchor>,
+    center: Res<MapCenter>,
     status: Res<TerrainStatus>,
     home: Res<HomeElevation>,
     world: Res<WorldConfig>,
@@ -346,8 +305,8 @@ fn update_hud(
         "loaded".into()
     };
     hud.0 = format!(
-        "geoTiles  anchor {:.5}, {:.5}  (home {:.0} m MSL)\ncamera {lat:.5}, {lon:.5}  AGL {agl}\ntiles {}  {loading}",
-        geo.lat, geo.lon, elevation, status.resident,
+        "satellite_map  centre {:.5}, {:.5}  (home {:.0} m MSL)\ncamera {lat:.5}, {lon:.5}  AGL {agl}\ntiles {}  {loading}",
+        center.0.latitude, center.0.longitude, elevation, status.resident,
     );
 }
 
@@ -361,29 +320,6 @@ fn world_to_lat_lon(world: &WorldConfig, anchor: &TerrainAnchor, position: Vec3)
     let lon = x / n * 360.0 - 180.0;
     let lat = (std::f64::consts::PI * (1.0 - 2.0 * y / n)).sinh().atan().to_degrees();
     (lat, lon)
-}
-
-fn take_screenshot_when_loaded(
-    mut commands: Commands,
-    mut request: ResMut<ScreenshotRequest>,
-    home: Res<HomeElevation>,
-    time: Res<Time>,
-    mut exit: MessageWriter<AppExit>,
-) {
-    let now = time.elapsed_secs();
-    if home.0.is_none() {
-        return;
-    }
-    let loaded_at = *request.loaded_at.get_or_insert(now);
-    if !request.taken && now - loaded_at >= SCREENSHOT_SETTLE_SECS {
-        info!("geoTiles screenshot -> {}", request.path);
-        commands
-            .spawn(Screenshot::primary_window())
-            .observe(save_to_disk(request.path.clone()));
-        request.taken = true;
-    } else if request.taken && now - loaded_at >= SCREENSHOT_SETTLE_SECS + 2.0 {
-        exit.write(AppExit::Success);
-    }
 }
 
 #[cfg(test)]

@@ -6,7 +6,11 @@ use bevy::{
     window::{CursorGrabMode, CursorOptions, PrimaryWindow},
 };
 
+use bevy::camera::{PerspectiveProjection, Projection, visibility::RenderLayers};
+
+use super::{VEHICLE_RENDER_LAYER, WORLD_DEBUG_RENDER_LAYER};
 use crate::sim::{SimEntity, SimUpdateSet, SmoothedPose, VEHICLE_ID};
+use crate::worlds::DebugCameraStart;
 
 const PITCH_LIMIT: f32 = FRAC_PI_2 - 0.01;
 const FOLLOW_DISTANCE: f32 = 10.0;
@@ -46,7 +50,7 @@ pub struct DebugCameraPlugin;
 
 impl Plugin for DebugCameraPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(
+        app.add_systems(Startup, spawn_debug_camera).add_systems(
             Update,
             (
                 toggle_camera_mode,
@@ -57,6 +61,20 @@ impl Plugin for DebugCameraPlugin {
                 .after(SimUpdateSet::Smooth),
         );
     }
+}
+
+/// The window's camera, starting where the world asks.
+fn spawn_debug_camera(mut commands: Commands, start: Res<DebugCameraStart>) {
+    commands.spawn((
+        Camera3d::default(),
+        Projection::Perspective(PerspectiveProjection {
+            far: 3_000.0,
+            ..default()
+        }),
+        DebugCamera::default(),
+        RenderLayers::from_layers(&[0, VEHICLE_RENDER_LAYER, WORLD_DEBUG_RENDER_LAYER]),
+        start.0,
+    ));
 }
 
 fn toggle_camera_mode(

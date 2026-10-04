@@ -1,6 +1,6 @@
 //! Scripted screenshot tour for reviewing the environment.
 //!
-//! `BV_ENV_PREVIEW=<dir> ./run_proving_ground.sh` flies the desktop camera
+//! `cargo run -- forest --tour <dir>` flies the desktop camera
 //! through a fixed set of viewpoints (ground level, 5-20 m, 30-50 m, overhead),
 //! saves one PNG per viewpoint into `<dir>`, and exits. Useful for visual
 //! regression checks after changing assets or placement.
@@ -33,12 +33,11 @@ pub struct PreviewTour {
 }
 
 impl PreviewTour {
-    pub fn from_env() -> Option<Self> {
-        let dir: PathBuf = std::env::var_os("BV_ENV_PREVIEW")?.into();
+    pub fn new(dir: PathBuf) -> Self {
         if let Err(error) = std::fs::create_dir_all(&dir) {
             warn!("preview: cannot create {}: {error}", dir.display());
         }
-        Some(Self { dir, index: 0, wait: SETTLE_FRAMES * 2, frame_time: 0.0, frames: 0, elapsed: 0.0 })
+        Self { dir, index: 0, wait: SETTLE_FRAMES * 2, frame_time: 0.0, frames: 0, elapsed: 0.0 }
     }
 }
 
@@ -64,19 +63,7 @@ pub fn run_tour(
     mut camera: Query<&mut Transform, With<DebugCamera>>,
     mut exit: MessageWriter<AppExit>,
     time: Res<Time>,
-    mut windows: Query<&mut Window>,
 ) {
-    // Optional fixed resolution for comparable timings: BV_ENV_PREVIEW_SIZE=1280x720
-    if tour.index == 0 && tour.wait == SETTLE_FRAMES * 2 && tour.elapsed == 0.0 {
-        if let Some((w, h)) = std::env::var("BV_ENV_PREVIEW_SIZE").ok().and_then(|s| {
-            let (w, h) = s.split_once('x')?;
-            Some((w.parse::<u32>().ok()?, h.parse::<u32>().ok()?))
-        }) {
-            for mut window in &mut windows {
-                window.resolution.set_physical_resolution(w, h);
-            }
-        }
-    }
     let shots = viewpoints();
     let Ok(mut transform) = camera.single_mut() else { return };
     if tour.index >= shots.len() {

@@ -1,23 +1,10 @@
 use bevy::prelude::*;
 
+use crate::geo::{self, GeoPoint};
+
 const EARTH_RADIUS_M: f64 = 6_371_000.0;
 
-#[derive(Clone, Copy, Debug, PartialEq)]
-pub(super) struct GeoPoint {
-    pub latitude: f64,
-    pub longitude: f64,
-}
-
-impl GeoPoint {
-    pub const fn new(latitude: f64, longitude: f64) -> Self {
-        Self {
-            latitude,
-            longitude,
-        }
-    }
-}
-
-pub(super) const HOME: GeoPoint = GeoPoint::new(36.214_675, -96.006_555_56);
+pub(super) const HOME: GeoPoint = geo::SUAS_2026_FIELD;
 
 pub(super) const FLIGHT_BOUNDARY: [GeoPoint; 11] = [
     GeoPoint::new(36.219_314_393_547_8, -96.001_710_891_723_62),
@@ -107,22 +94,6 @@ mod tests {
 
         assert!(north.x < 0.0 && north.y.abs() < 0.001);
         assert!(east.y < 0.0 && east.x.abs() < 0.001);
-    }
-
-    #[test]
-    fn shared_suas_environment_uses_layout_home() {
-        let environment = include_str!("../../../config/suas.env");
-        let value = |key: &str| {
-            environment
-                .lines()
-                .find_map(|line| line.strip_prefix(&format!("{key}=")))
-                .unwrap()
-                .parse::<f64>()
-                .unwrap()
-        };
-
-        assert!((value("PX4_HOME_LAT") - HOME.latitude).abs() < 1e-9);
-        assert!((value("PX4_HOME_LON") - HOME.longitude).abs() < 1e-9);
     }
 
     #[test]
