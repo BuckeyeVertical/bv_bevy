@@ -1,10 +1,7 @@
 # Run a World
 
 Each world takes two terminals from `~/Code/bv_bevy`: PX4 + Gazebo (the drone)
-and Bevy (the world and the drone's camera). Start PX4 in terminal 1 first, then Bevy in terminal 2. When the drone
-appears in the Bevy window it is ready to fly: connect your flight stack to
-PX4 over MAVLink and read the onboard camera from `127.0.0.1:7002`
-([camera_frame_v1.md](camera_frame_v1.md)).
+and Bevy (the world and the drone's camera). Start PX4 in terminal 1 first, then Bevy in terminal 2.
 
 In the Bevy window the camera follows the drone. Press `F` for a free camera;
 left click enables mouse look, and `W/A/S/D`, `E/Q` and Shift move it.
