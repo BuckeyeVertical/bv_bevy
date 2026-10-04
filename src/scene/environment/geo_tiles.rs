@@ -5,12 +5,16 @@
 //! on the anchor coordinate and the terrain is lowered so the ground there is at
 //! y = 0, matching the flat-ground convention of the other profiles.
 //!
+//! bevytiles lays tiles out with east = +X and north = -Z. Everything else here,
+//! including the vehicle, uses Gazebo's East-North-Up frame mapped into Bevy
+//! (`sim::gazebo_position_to_bevy`: north = -X, east = -Z). So bevytiles runs in
+//! its own frame, driven by a proxy camera, and each tile is yawed into ours.
+//!
 //! Environment:
 //! - `BV_GEO_LAT` / `BV_GEO_LON`  anchor (degrees); falls back to `PX4_HOME_LAT` / `PX4_HOME_LON`
-//! - `BV_GEO_MAX_ZOOM`            finest LOD, 15..=19 (default 18; above 15 heights are synthesized)
-//! - `BV_GEO_START_AGL_M`         debug camera height above the ground once loaded (default 45.72 = 150 ft)
-//! - `BV_GEO_CACHE_DIR`           tile cache (default `.cache/geo_tiles`)
 //! - `BV_GEO_SCREENSHOT`          save a screenshot here once loaded, then exit
+
+use std::f32::consts::FRAC_PI_2;
 
 use bevy::{
     app::AppExit,
@@ -24,7 +28,8 @@ use crate::camera::DebugCamera;
 
 const SKY: Color = Color::srgb(0.52, 0.72, 0.92);
 const CAMERA_FAR: f32 = 200_000.0;
-const DEFAULT_MAX_ZOOM: u8 = 18;
+/// Finest LOD: ~117 m tiles. Heightmaps above z15 are synthesized by bevytiles.
+const MAX_ZOOM: u8 = 18;
 /// bevytiles skips a base tile outright when its *center* is beyond the
 /// horizon (3.57 km * sqrt(camera height)). Its default z9 tiles are ~60 km
 /// wide, so below a few hundred meters nothing loads; z12 tiles (~7.5 km)
@@ -33,8 +38,9 @@ const BASE_ZOOM: u8 = 12;
 /// Base tiles loaded around the camera, ~30 km at z12; fog hides the edge.
 const STREAMING_RADIUS: i32 = 4;
 const EQUATOR_CIRCUMFERENCE_M: f64 = 40_075_016.686;
-const DEFAULT_START_AGL_M: f32 = 45.72;
-const DEFAULT_CACHE_DIR: &str = ".cache/geo_tiles";
+/// Debug camera height above the ground once the terrain has loaded (150 ft).
+const START_AGL_M: f32 = 45.72;
+const CACHE_DIR: &str = ".cache/geo_tiles";
 /// Time after the initial load before the screenshot, so the finest tiles
 /// requested by the settled camera can arrive and pipelines can compile.
 const SCREENSHOT_SETTLE_SECS: f32 = 6.0;
@@ -73,6 +79,11 @@ impl GeoAnchor {
 #[derive(Resource, Default)]
 struct HomeElevation(Option<f32>);
 
+/// Stands in for the debug camera in bevytiles' frame; bevytiles streams tiles
+/// around this entity's translation.
+#[derive(Component)]
+struct StreamingFocus;
+
 #[derive(Component)]
 struct GeoHud;
 
@@ -88,18 +99,10 @@ pub struct GeoTilesPlugin;
 impl Plugin for GeoTilesPlugin {
     fn build(&self, app: &mut App) {
         let anchor = GeoAnchor::from_env();
-        let max_zoom = std::env::var("BV_GEO_MAX_ZOOM")
-            .ok()
-            .and_then(|zoom| zoom.parse::<u8>().ok())
-            .unwrap_or(DEFAULT_MAX_ZOOM)
-            .clamp(15, 19);
-        info!(
-            "geoTiles anchored at {:.6}, {:.6} (max zoom {max_zoom})",
-            anchor.lat, anchor.lon
-        );
+        info!("geoTiles anchored at {:.6}, {:.6}", anchor.lat, anchor.lon);
 
         let mut world = world_config(anchor.lat, anchor.lon, BASE_ZOOM);
-        world.max_zoom = max_zoom;
+        world.max_zoom = MAX_ZOOM;
         world.skirt_overlap = [1.01; ZOOM_LEVELS];
         // Put the anchor coordinate at the user-space origin, where the
         // vehicle and the debug camera expect the home position.
@@ -122,18 +125,21 @@ impl Plugin for GeoTilesPlugin {
             .insert_resource(streaming_config(BASE_ZOOM))
             .insert_resource(NetworkConfig {
                 threads: 8,
-                cache_dir: std::env::var("BV_GEO_CACHE_DIR")
-                    .unwrap_or_else(|_| DEFAULT_CACHE_DIR.into())
-                    .into(),
+                cache_dir: CACHE_DIR.into(),
                 ..default()
             })
             .init_resource::<HomeElevation>()
             .add_plugins(TerrainPlugin)
-            .add_systems(Startup, spawn_hud)
-            .add_systems(Update, attach_terrain_camera.before(TerrainSet::Reconcile))
+            .add_systems(Startup, (spawn_streaming_focus, spawn_hud))
             .add_systems(
                 Update,
-                (keep_tile_bounds, resolve_home_elevation, lower_tiles)
+                (widen_debug_camera, follow_debug_camera)
+                    .chain()
+                    .before(TerrainSet::Reconcile),
+            )
+            .add_systems(
+                Update,
+                (keep_tile_bounds, resolve_home_elevation, place_tiles)
                     .chain()
                     .after(TerrainSet::Status),
             )
@@ -145,7 +151,7 @@ impl Plugin for GeoTilesPlugin {
                 loaded_at: None,
                 taken: false,
             })
-            .add_systems(Update, take_screenshot_when_loaded.after(lower_tiles));
+            .add_systems(Update, take_screenshot_when_loaded.after(place_tiles));
         }
     }
 }
@@ -194,17 +200,49 @@ fn streaming_config(base_zoom: u8) -> StreamingConfig {
     }
 }
 
-/// The debug camera drives tile streaming; widen its far plane to the horizon.
-fn attach_terrain_camera(
-    mut commands: Commands,
-    mut cameras: Query<(Entity, &mut Projection), Added<DebugCamera>>,
-) {
-    for (entity, mut projection) in &mut cameras {
+/// Yaw from bevytiles' frame (east = +X) into ours (east = -Z).
+fn tiles_to_world() -> Quat {
+    Quat::from_rotation_y(FRAC_PI_2)
+}
+
+fn world_to_tiles(position: Vec3) -> Vec3 {
+    tiles_to_world().inverse() * position
+}
+
+fn spawn_streaming_focus(mut commands: Commands) {
+    commands.spawn((
+        Name::new("bevytiles streaming focus"),
+        StreamingFocus,
+        TerrainCamera,
+        Transform::default(),
+    ));
+}
+
+/// Widen the debug camera's far plane to the horizon.
+fn widen_debug_camera(mut cameras: Query<&mut Projection, Added<DebugCamera>>) {
+    for mut projection in &mut cameras {
         if let Projection::Perspective(PerspectiveProjection { far, .. }) = projection.as_mut() {
             *far = CAMERA_FAR;
         }
-        commands.entity(entity).insert(TerrainCamera);
     }
+}
+
+/// Stream tiles around the debug camera.
+fn follow_debug_camera(
+    camera: Single<&Transform, (With<DebugCamera>, Without<StreamingFocus>)>,
+    mut focus: Single<&mut Transform, With<StreamingFocus>>,
+) {
+    focus.translation = world_to_tiles(camera.translation);
+}
+
+/// Terrain height (meters MSL) under a point in our frame.
+fn terrain_height(
+    grids: &HeightGrids,
+    world: &WorldConfig,
+    anchor: &TerrainAnchor,
+    position: Vec3,
+) -> Option<f32> {
+    ground_height(grids, world, anchor, world_to_tiles(position))
 }
 
 /// Sample the anchor's ground height once the initial tile set is resident,
@@ -215,23 +253,19 @@ fn resolve_home_elevation(
     grids: Res<HeightGrids>,
     world: Res<WorldConfig>,
     anchor: Res<TerrainAnchor>,
-    mut camera: Single<&mut Transform, With<TerrainCamera>>,
+    mut camera: Single<&mut Transform, With<DebugCamera>>,
 ) {
     if home.0.is_some() || status.loading {
         return;
     }
-    let Some(height) = ground_height(&grids, &world, &anchor, Vec3::ZERO) else {
+    let Some(height) = terrain_height(&grids, &world, &anchor, Vec3::ZERO) else {
         return;
     };
     info!("geoTiles home elevation {height:.1} m MSL");
     home.0 = Some(height);
 
-    let agl = std::env::var("BV_GEO_START_AGL_M")
-        .ok()
-        .and_then(|agl| agl.parse::<f32>().ok())
-        .unwrap_or(DEFAULT_START_AGL_M);
-    let ground = ground_height(&grids, &world, &anchor, camera.translation).unwrap_or(height);
-    camera.translation.y = ground - height + agl;
+    let ground = terrain_height(&grids, &world, &anchor, camera.translation).unwrap_or(height);
+    camera.translation.y = ground - height + START_AGL_M;
 }
 
 /// bevytiles gives each tile an AABB spanning the full height column, but
@@ -244,16 +278,26 @@ fn keep_tile_bounds(mut commands: Commands, tiles: Query<Entity, Added<Tile>>) {
     }
 }
 
-/// bevytiles spawns tiles at y = 0 and its rebase only touches x/z, so the
-/// vertical offset is applied here to new tiles (and to all once it is known).
-fn lower_tiles(home: Res<HomeElevation>, mut tiles: Query<(&mut Transform, Ref<Tile>)>) {
-    let Some(elevation) = home.0 else {
-        return;
-    };
-    let all = home.is_changed();
+/// Move tiles from bevytiles' layout into our frame: yaw them, and lower them
+/// so the anchor's ground is at y = 0. bevytiles only writes tile transforms
+/// when a tile spawns or the anchor changes, so those are the frames to redo.
+fn place_tiles(
+    home: Res<HomeElevation>,
+    anchor: Res<TerrainAnchor>,
+    mut tiles: Query<(&mut Transform, Ref<Tile>)>,
+) {
+    let all = home.is_changed() || anchor.is_changed();
+    let elevation = home.0.unwrap_or(0.0);
+    let offset = anchor.world_offset;
     for (mut transform, tile) in &mut tiles {
         if all || tile.is_added() {
-            transform.translation.y = -elevation;
+            let in_tiles = Vec3::new(
+                (tile.abs_x + f64::from(offset.x)) as f32,
+                -elevation,
+                (tile.abs_z + f64::from(offset.z)) as f32,
+            );
+            transform.translation = tiles_to_world() * in_tiles;
+            transform.rotation = tiles_to_world();
         }
     }
 }
@@ -287,13 +331,13 @@ fn update_hud(
     world: Res<WorldConfig>,
     anchor: Res<TerrainAnchor>,
     grids: Res<HeightGrids>,
-    camera: Single<&Transform, With<TerrainCamera>>,
+    camera: Single<&Transform, With<DebugCamera>>,
     mut hud: Single<&mut Text, With<GeoHud>>,
 ) {
     let position = camera.translation;
-    let (lat, lon) = user_to_lat_lon(&world, &anchor, position);
+    let (lat, lon) = world_to_lat_lon(&world, &anchor, position);
     let elevation = home.0.unwrap_or(0.0);
-    let agl = ground_height(&grids, &world, &anchor, position)
+    let agl = terrain_height(&grids, &world, &anchor, position)
         .map(|ground| format!("{:.0} m", position.y + elevation - ground))
         .unwrap_or_else(|| "?".into());
     let loading = if status.loading {
@@ -307,9 +351,10 @@ fn update_hud(
     );
 }
 
-/// Inverse of bevytiles' web-mercator anchoring (`WorldConfig::from_lat_lon`).
-fn user_to_lat_lon(world: &WorldConfig, anchor: &TerrainAnchor, user: Vec3) -> (f64, f64) {
-    let absolute = user - anchor.world_offset;
+/// Inverse of bevytiles' web-mercator anchoring (`WorldConfig::from_lat_lon`),
+/// for a point in our frame.
+fn world_to_lat_lon(world: &WorldConfig, anchor: &TerrainAnchor, position: Vec3) -> (f64, f64) {
+    let absolute = world_to_tiles(position) - anchor.world_offset;
     let n = f64::from(1u32 << world.base_zoom);
     let x = f64::from(world.anchor_x) + f64::from(absolute.x) / f64::from(world.tile_size);
     let y = f64::from(world.anchor_z) + f64::from(absolute.z) / f64::from(world.tile_size);
@@ -368,21 +413,31 @@ mod tests {
         let anchor = TerrainAnchor {
             world_offset: -world.origin_offset,
         };
-        let (lat, lon) = user_to_lat_lon(&world, &anchor, Vec3::ZERO);
+        let (lat, lon) = world_to_lat_lon(&world, &anchor, Vec3::ZERO);
         assert!((lat - 39.9874).abs() < 1e-4, "{lat}");
         assert!((lon + 83.0456).abs() < 1e-4, "{lon}");
     }
 
     #[test]
-    fn east_is_positive_x_and_north_is_negative_z() {
-        let world = world_config(39.9874, -83.0456, BASE_ZOOM);
+    fn terrain_matches_the_gazebo_east_north_up_frame() {
+        let (lat, lon) = (39.9874, -83.0456);
+        let world = world_config(lat, lon, BASE_ZOOM);
         let anchor = TerrainAnchor {
             world_offset: -world.origin_offset,
         };
-        let (_, east_lon) = user_to_lat_lon(&world, &anchor, Vec3::X * 1_000.0);
-        let (north_lat, _) = user_to_lat_lon(&world, &anchor, Vec3::NEG_Z * 1_000.0);
-        assert!(east_lon > -83.0456);
-        assert!(north_lat > 39.9874);
+        let meters_per_degree_lat = 111_000.0;
+        let east = crate::sim::gazebo_position_to_bevy(Vec3::X * 1_000.0);
+        let north = crate::sim::gazebo_position_to_bevy(Vec3::Y * 1_000.0);
+
+        let (east_lat, east_lon) = world_to_lat_lon(&world, &anchor, east);
+        assert!((east_lat - lat).abs() < 1e-6, "{east_lat}");
+        let east_m = (east_lon - lon) * meters_per_degree_lat * lat.to_radians().cos();
+        assert!((east_m - 1_000.0).abs() < 15.0, "{east_m}");
+
+        let (north_lat, north_lon) = world_to_lat_lon(&world, &anchor, north);
+        assert!((north_lon - lon).abs() < 1e-6, "{north_lon}");
+        let north_m = (north_lat - lat) * meters_per_degree_lat;
+        assert!((north_m - 1_000.0).abs() < 15.0, "{north_m}");
     }
 }
 
