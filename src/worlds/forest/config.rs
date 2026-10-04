@@ -61,7 +61,7 @@ pub struct SiteConfig {
     pub scan_targets: Vec<ScanTarget>,
 }
 
-/// A vision target for the scan phase (same models as the grass_targets world).
+/// A vision target for the scan phase (same models as the suas_2026 world).
 #[derive(Clone, Debug)]
 pub struct ScanTarget {
     pub name: &'static str,

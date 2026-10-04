@@ -27,9 +27,8 @@ pub struct Cli {
 
 /// Old world names, so stale scripts and habits fail with a pointer instead
 /// of "unrecognized subcommand".
+const REMOVED_WORLDS: &[&str] = &["minimal", "bv_mission", "gazebo_boxes", "missionTest", "grass_targets"];
 const RENAMED_WORLDS: &[(&str, &str)] = &[
-    ("bv_mission", "gazebo_boxes"),
-    ("missionTest", "grass_targets"),
     ("SUAS", "suas_2026"),
     ("suas", "suas_2026"),
     ("provingGround", "forest"),
@@ -72,6 +71,9 @@ impl Cli {
 }
 
 fn renamed_world(arg: &str) -> Option<String> {
+    if REMOVED_WORLDS.contains(&arg) {
+        return Some(format!("the `{arg}` world was removed; worlds: suas_2026, forest, satellite_map"));
+    }
     RENAMED_WORLDS
         .iter()
         .find(|(old, _)| *old == arg)
@@ -91,7 +93,7 @@ mod tests {
 
     #[test]
     fn every_world_parses_by_its_name() {
-        for name in ["minimal", "gazebo_boxes", "grass_targets", "suas_2026", "forest", "satellite_map"] {
+        for name in ["suas_2026", "forest", "satellite_map"] {
             let cli = Cli::try_parse_from(["bv_bevy", name]).unwrap();
             assert_eq!(cli.world.name(), name);
         }
@@ -113,6 +115,7 @@ mod tests {
     fn old_world_names_point_to_new_ones() {
         assert!(renamed_world("provingGround").unwrap().contains("forest"));
         assert!(renamed_world("forest").is_none());
+        assert!(renamed_world("missionTest").unwrap().contains("removed"));
         for (_, new) in RENAMED_WORLDS {
             assert!(Cli::try_parse_from(["bv_bevy", new]).is_ok(), "{new}");
         }

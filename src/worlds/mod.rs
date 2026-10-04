@@ -9,9 +9,6 @@
 //! 3. Add it to `docs/Run.md`.
 
 mod forest;
-mod gazebo_boxes;
-mod grass_targets;
-mod minimal;
 mod satellite_map;
 pub mod shared;
 mod suas_2026;
@@ -26,15 +23,6 @@ pub use forest::Quality;
 
 #[derive(clap::Subcommand, Clone, Debug)]
 pub enum WorldChoice {
-    /// Flat grass with a grid, a landing pad and three obstacles.
-    #[command(name = "minimal")]
-    Minimal,
-    /// Coloured boxes where the objects of the PX4 Gazebo world (bv_mission.sdf) stand.
-    #[command(name = "gazebo_boxes")]
-    GazeboBoxes,
-    /// Grass with a mannequin and a tent along a scan line: a quick vision test.
-    #[command(name = "grass_targets")]
-    GrassTargets,
     /// The SUAS 2026 competition field: boundaries, lap route, targets and trees.
     #[command(name = "suas_2026")]
     Suas2026,
@@ -72,25 +60,18 @@ pub struct SatelliteMapOptions {
 impl WorldChoice {
     pub fn name(&self) -> &'static str {
         match self {
-            Self::Minimal => "minimal",
-            Self::GazeboBoxes => "gazebo_boxes",
-            Self::GrassTargets => "grass_targets",
             Self::Suas2026 => "suas_2026",
             Self::Forest(_) => "forest",
             Self::SatelliteMap(_) => "satellite_map",
         }
     }
 
-    /// Where PX4 believes the world origin is. The bv_ws mission configs for
-    /// the flat worlds and the forest fly around the SUAS field home.
+    /// Where PX4 believes the world origin is. The bv_ws mission config for
+    /// the forest flies around the SUAS field home.
     pub fn px4_home(&self) -> GeoPoint {
         match self {
             Self::SatelliteMap(options) => GeoPoint::new(options.lat, options.lon),
-            Self::Minimal
-            | Self::GazeboBoxes
-            | Self::GrassTargets
-            | Self::Suas2026
-            | Self::Forest(_) => geo::SUAS_2026_FIELD,
+            Self::Suas2026 | Self::Forest(_) => geo::SUAS_2026_FIELD,
         }
     }
 }
@@ -113,9 +94,6 @@ impl Plugin for WorldPlugin {
     fn build(&self, app: &mut App) {
         app.init_state::<WorldLoad>();
         match &self.0 {
-            WorldChoice::Minimal => app.add_plugins(minimal::MinimalPlugin),
-            WorldChoice::GazeboBoxes => app.add_plugins(gazebo_boxes::GazeboBoxesPlugin),
-            WorldChoice::GrassTargets => app.add_plugins(grass_targets::GrassTargetsPlugin),
             WorldChoice::Suas2026 => app.add_plugins(suas_2026::Suas2026Plugin),
             WorldChoice::Forest(options) => app.add_plugins(forest::ForestPlugin {
                 quality: options.quality,
