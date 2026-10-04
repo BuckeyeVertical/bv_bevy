@@ -219,8 +219,9 @@ impl ProvingGroundConfig {
                         north: 18.0,
                         east: 14.0,
                         heading: 0.45,
-                        tilt: std::f32::consts::FRAC_PI_2,
-                        ground_clearance: 0.17,
+                        // Lying face up: the model faces +Z, so tilt it back about X.
+                        tilt: -std::f32::consts::FRAC_PI_2,
+                        ground_clearance: 0.20,
                     },
                     ScanTarget {
                         name: "tent",

@@ -12,8 +12,9 @@ const TARGETS: [Target; 2] = [
         asset: "models/polo_shirt_mannequin_optimized.glb",
         scan_index: 2,
         heading_radians: 0.45,
-        tilt_radians: FRAC_PI_2,
-        ground_clearance_m: 0.17,
+        // Lying face up: the model faces +Z, so tilt it back about X.
+        tilt_radians: -FRAC_PI_2,
+        ground_clearance_m: 0.20,
     },
     Target {
         kind: "tent",
@@ -76,11 +77,13 @@ mod tests {
     }
 
     #[test]
-    fn mannequin_lies_horizontally_above_the_ground() {
+    fn mannequin_lies_face_up_above_the_ground() {
         let transform = target_transform(TARGETS[0], scan_position(TARGETS[0].scan_index));
         let model_up = transform.rotation * Vec3::Y;
+        let model_front = transform.rotation * Vec3::Z;
 
         assert!(model_up.y.abs() < 1e-5);
-        assert!((transform.translation.y - 0.17).abs() < 1e-5);
+        assert!(model_front.y > 0.99);
+        assert!((transform.translation.y - 0.20).abs() < 1e-5);
     }
 }
