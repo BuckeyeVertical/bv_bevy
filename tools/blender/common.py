@@ -17,7 +17,7 @@ def raw_root():
 
 
 def runtime_root():
-    return Path(__file__).resolve().parents[2] / "assets" / "environment"
+    return Path(__file__).resolve().parents[2] / "assets" / "forest"
 
 
 # --------------------------------------------------------------------------- images

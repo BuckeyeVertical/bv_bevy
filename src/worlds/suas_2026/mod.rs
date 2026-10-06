@@ -1,13 +1,20 @@
+//! `suas_2026`: the SUAS 2026 competition field, laid out from its published
+//! boundaries, with trees, the lap route, the search area and two targets.
+
 use std::f32::consts::{FRAC_PI_2, TAU};
 
 use bevy::{camera::visibility::RenderLayers, math::Affine2, prelude::*};
 
-use crate::scene::WORLD_DEBUG_RENDER_LAYER;
+use super::DebugCameraStart;
+use super::shared::{DaylightPlugin, load_repeating_texture};
+use crate::camera::WORLD_DEBUG_RENDER_LAYER;
 
-use super::suas_layout::{self, FLIGHT_BOUNDARY, LAP_ROUTE, SEARCH_BOUNDARY_1};
+mod layout;
 
-pub(super) const WORLD_WIDTH_M: f32 = 1_400.0;
-pub(super) const WORLD_DEPTH_M: f32 = 1_400.0;
+use self::layout::{FLIGHT_BOUNDARY, LAP_ROUTE, SEARCH_BOUNDARY_1};
+
+const WORLD_WIDTH_M: f32 = 1_400.0;
+const WORLD_DEPTH_M: f32 = 1_400.0;
 
 const WORLD_CENTER: Vec2 = Vec2::new(-115.627_68, 129.114_97);
 const TREE_MODEL_HEIGHT_M: f32 = 15.831_376;
@@ -67,7 +74,29 @@ impl Cluster {
     }
 }
 
-pub(super) fn spawn(
+pub struct Suas2026Plugin;
+
+impl Plugin for Suas2026Plugin {
+    fn build(&self, app: &mut App) {
+        // Straight down over the field.
+        let center = Vec3::new(-45.0, 0.0, -175.0);
+        let camera = Transform::from_xyz(center.x, 1_250.0, center.z).looking_at(center, Vec3::NEG_Z);
+        app.insert_resource(DebugCameraStart(camera))
+            .add_plugins(DaylightPlugin)
+            .add_systems(Startup, (spawn_world, super::ready));
+    }
+}
+
+fn spawn_world(
+    mut commands: Commands,
+    asset_server: Res<AssetServer>,
+    mut meshes: ResMut<Assets<Mesh>>,
+    mut materials: ResMut<Assets<StandardMaterial>>,
+) {
+    spawn(&mut commands, &asset_server, &mut meshes, &mut materials);
+}
+
+fn spawn(
     commands: &mut Commands,
     asset_server: &AssetServer,
     meshes: &mut Assets<Mesh>,
@@ -88,7 +117,7 @@ fn spawn_ground(
     meshes: &mut Assets<Mesh>,
     materials: &mut Assets<StandardMaterial>,
 ) {
-    let grass = super::load_repeating_texture(asset_server, "textures/grass004/color.jpg", true);
+    let grass = load_repeating_texture(asset_server, "textures/grass004/color.jpg", true);
     let material = materials.add(StandardMaterial {
         base_color: Color::srgb(0.78, 0.82, 0.72),
         base_color_texture: Some(grass),
@@ -117,7 +146,7 @@ fn spawn_ground_variation(
 ) {
     let patch_mesh = meshes.add(Cylinder::new(1.0, 0.012));
     let withered_grass =
-        super::load_repeating_texture(asset_server, "textures/withered_grass/color.jpg", true);
+        load_repeating_texture(asset_server, "textures/withered_grass/color.jpg", true);
     let dry_grass = materials.add(StandardMaterial {
         base_color: Color::srgba(0.56, 0.62, 0.42, 0.48),
         base_color_texture: Some(withered_grass),
@@ -325,13 +354,13 @@ fn spawn_targets(commands: &mut Commands, asset_server: &AssetServer) {
 
 fn target_positions() -> [Vec2; 2] {
     [
-        suas_layout::search_position(0.30, 0.35),
-        suas_layout::search_position(0.72, 0.68),
+        layout::search_position(0.30, 0.35),
+        layout::search_position(0.72, 0.68),
     ]
 }
 
 fn target_inside_search(position: Vec2) -> bool {
-    suas_layout::contains(&SEARCH_BOUNDARY_1.map(suas_layout::to_bevy), position)
+    layout::contains(&SEARCH_BOUNDARY_1.map(layout::to_bevy), position)
 }
 
 fn cluster_position(cluster: Cluster, targets: &[Vec2; 2], rng: &mut FixedRng) -> Vec2 {
@@ -420,7 +449,7 @@ fn spawn_layout_overlay(
         &line_mesh,
         &flight,
         "Flight boundary",
-        &FLIGHT_BOUNDARY.map(suas_layout::to_bevy),
+        &FLIGHT_BOUNDARY.map(layout::to_bevy),
         2.5,
     );
     spawn_debug_path(
@@ -428,10 +457,10 @@ fn spawn_layout_overlay(
         &line_mesh,
         &search,
         "Search boundary 1",
-        &SEARCH_BOUNDARY_1.map(suas_layout::to_bevy),
+        &SEARCH_BOUNDARY_1.map(layout::to_bevy),
         2.0,
     );
-    let lap_points = LAP_ROUTE.map(suas_layout::to_bevy);
+    let lap_points = LAP_ROUTE.map(layout::to_bevy);
     spawn_debug_path(commands, &line_mesh, &lap, "Lap route", &lap_points, 2.0);
 
     let marker_mesh = meshes.add(Cylinder::new(3.5, DEBUG_LINE_HEIGHT_M));
@@ -498,11 +527,11 @@ mod tests {
 
     #[test]
     fn world_contains_the_published_flight_area() {
-        for point in FLIGHT_BOUNDARY.map(suas_layout::to_bevy) {
+        for point in FLIGHT_BOUNDARY.map(layout::to_bevy) {
             assert!(within_world(point, 50.0));
         }
 
-        for point in LAP_ROUTE.map(suas_layout::to_bevy) {
+        for point in LAP_ROUTE.map(layout::to_bevy) {
             assert!(within_world(point, 50.0));
         }
     }
@@ -510,7 +539,7 @@ mod tests {
     #[test]
     fn search_boundary_one_has_the_expected_size() {
         let [southwest, southeast, northeast, northwest] =
-            SEARCH_BOUNDARY_1.map(suas_layout::to_bevy);
+            SEARCH_BOUNDARY_1.map(layout::to_bevy);
 
         assert!((250.0..=270.0).contains(&southwest.distance(southeast)));
         assert!((140.0..=160.0).contains(&southwest.distance(northwest)));

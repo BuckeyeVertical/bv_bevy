@@ -2,14 +2,14 @@
 
     blender -b --python tools/blender/export_textures.py
 
-Outputs (assets/environment/materials/):
+Outputs (assets/forest/materials/):
   terrain_albedo.jpg   5 layers stacked vertically (1024 px each), sRGB
   terrain_normal.jpg   matching OpenGL-convention normal maps, linear
      layer order: 0 meadow grass, 1 dry grass, 2 forest floor, 3 gravel, 4 dirt trail
   asphalt_{diff,nor,rough}.jpg, factory_wall_{diff,nor,rough}.jpg
 
 Bevy loads the stacked images as 2D texture arrays (ImageArrayLayout::RowCount)
-and generates mip chains at load time (see proving_ground/mipmaps.rs).
+and generates mip chains at load time (see worlds/forest/assets.rs).
 Roughness is not packed for the terrain: ground is uniformly rough, so the shader
 uses per-layer constants.  JPEG chroma subsampling would also smear packed data.
 """

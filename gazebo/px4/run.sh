@@ -16,9 +16,10 @@ export PX4_GZ_WORLD="$world_name"
 export PX4_GZ_STANDALONE=1
 export PX4_GZ_NO_FOLLOW=1
 export PX4_SIM_MODEL=gz_x500_gimbal
-export PX4_HOME_LAT="${PX4_HOME_LAT:-38.3876112}"
-export PX4_HOME_LON="${PX4_HOME_LON:--76.4190542}"
-export PX4_HOME_ALT="${PX4_HOME_ALT:-0.0}"
+: "${PX4_HOME_LAT:?PX4 home not set: start the simulator with ./px4.sh <world>}"
+: "${PX4_HOME_LON:?PX4 home not set: start the simulator with ./px4.sh <world>}"
+export PX4_HOME_LAT PX4_HOME_LON
+export PX4_HOME_ALT="${PX4_HOME_ALT:-0}"
 
 configure_px4() {
     local nav_dll_action="${BV_PX4_NAV_DLL_ACT:-0}"

@@ -1,6 +1,6 @@
-//! Rural drone proving ground built from Poly Haven assets.
+//! Forest clearing built from Poly Haven assets (`cargo run -- forest`).
 //!
-//! Selected with `BV_WORLD_PROFILE=provingGround`. A ~300 m square site: open
+//! A ~300 m square site: open
 //! meadow with a launch pad at the origin, a pine/fir forest around it, a gravel
 //! access road with a power line, and a shed with an asphalt work yard.
 //!
@@ -14,7 +14,7 @@
 //! - `structures` shed, props, barriers, power line
 //! - `lighting`   HDRI sky, IBL, sun, shadows, fog, exposure
 //!
-//! Asset conversion lives in `tools/blender/` (see `assets/environment/README.md`).
+//! Asset conversion lives in `tools/blender/` (see `assets/forest/README.md`).
 
 mod assets;
 mod config;
@@ -34,47 +34,47 @@ use bevy::{
 
 use self::{
     assets::{EnvironmentAssets, MeshLibrary},
-    config::{ProvingGroundConfig, Quality},
+    config::ForestConfig,
     layout::SiteLayout,
     lighting::SkyOrientation,
     terrain::TerrainMaterial,
 };
 
-pub fn is_selected(profile: &str) -> bool {
-    matches!(profile, "provingGround" | "proving_ground")
+pub use self::config::Quality;
+use super::{DebugCameraStart, WorldLoad};
+
+pub struct ForestPlugin {
+    pub quality: Quality,
+    pub shadows: bool,
+    /// Screenshot a fixed set of viewpoints into this folder, then exit.
+    pub tour: Option<std::path::PathBuf>,
 }
 
-pub struct ProvingGroundPlugin;
-
-#[derive(States, Default, Debug, Clone, PartialEq, Eq, Hash)]
-enum LoadState {
-    #[default]
-    Loading,
-    Ready,
-}
-
-impl Plugin for ProvingGroundPlugin {
+impl Plugin for ForestPlugin {
     fn build(&self, app: &mut App) {
-        let config = ProvingGroundConfig::new(Quality::from_env());
+        let mut config = ForestConfig::new(self.quality);
+        config.lighting.shadows = self.shadows;
         let sky = SkyOrientation::new(config.lighting.sun_azimuth_deg);
         let layout = SiteLayout::new(&config);
-        app.insert_resource(config)
+        // Overlooking the launch pad from above the meadow, the yard on the left.
+        let camera = Transform::from_xyz(-38.0, 24.0, -46.0).looking_at(Vec3::new(10.0, 0.0, 12.0), Vec3::Y);
+        app.insert_resource(DebugCameraStart(camera))
+            .insert_resource(config)
             .insert_resource(sky)
             .insert_resource(layout)
             .add_plugins(MaterialPlugin::<TerrainMaterial>::default())
-            .init_state::<LoadState>()
             .add_systems(Startup, start_loading)
             .add_systems(
                 Update,
                 (
                     lighting::configure_cameras.run_if(resource_exists::<EnvironmentAssets>),
-                    wait_for_assets.run_if(in_state(LoadState::Loading)),
+                    wait_for_assets.run_if(in_state(WorldLoad::Loading)),
                 ),
             )
-            .add_systems(OnEnter(LoadState::Ready), spawn_world);
-        if let Some(tour) = preview::PreviewTour::from_env() {
+            .add_systems(OnEnter(WorldLoad::Ready), spawn_world);
+        if let Some(tour) = self.tour.clone().map(preview::PreviewTour::new) {
             app.insert_resource(tour)
-                .add_systems(Update, preview::run_tour.run_if(in_state(LoadState::Ready)));
+                .add_systems(Update, preview::run_tour.run_if(in_state(WorldLoad::Ready)));
         }
     }
 }
@@ -82,12 +82,12 @@ impl Plugin for ProvingGroundPlugin {
 fn start_loading(
     mut commands: Commands,
     asset_server: Res<AssetServer>,
-    config: Res<ProvingGroundConfig>,
+    config: Res<ForestConfig>,
     sky: Res<SkyOrientation>,
 ) {
     commands.insert_resource(assets::load(&asset_server, config.lighting.sky_cubemap, config.lighting.ibl_cubemap));
     lighting::spawn_sun(&mut commands, &config, &sky);
-    info!("proving ground: loading environment assets ({:?} quality)", config.quality);
+    info!("forest: loading environment assets ({:?} quality)", config.quality);
 }
 
 fn wait_for_assets(
@@ -99,23 +99,23 @@ fn wait_for_assets(
     gltf_meshes: Res<Assets<GltfMesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
     mut images: ResMut<Assets<Image>>,
-    mut next: ResMut<NextState<LoadState>>,
+    mut next: ResMut<NextState<WorldLoad>>,
 ) {
     if !env.all_loaded(&asset_server) {
         return;
     }
     let started = std::time::Instant::now();
     let library = assets::build_library(&env, &asset_server, &gltfs, &gltf_nodes, &gltf_meshes, &mut materials, &mut images);
-    info!("proving ground: assets ready, textures mipmapped in {:.1?}", started.elapsed());
+    info!("forest: assets ready, textures mipmapped in {:.1?}", started.elapsed());
     commands.insert_resource(library);
-    next.set(LoadState::Ready);
+    next.set(WorldLoad::Ready);
 }
 
 #[allow(clippy::too_many_arguments)]
 fn spawn_world(
     mut commands: Commands,
     asset_server: Res<AssetServer>,
-    config: Res<ProvingGroundConfig>,
+    config: Res<ForestConfig>,
     layout: Res<SiteLayout>,
     env: Res<EnvironmentAssets>,
     library: Res<MeshLibrary>,
@@ -129,5 +129,5 @@ fn spawn_world(
     vegetation::spawn(&mut commands, &config, &plan, &library, &mut meshes);
     structures::spawn(&mut commands, &config, &layout, &library, &env, &mut meshes, &mut materials);
     structures::spawn_scan_targets(&mut commands, &config, &asset_server);
-    info!("proving ground: world generated in {:.1?}", started.elapsed());
+    info!("forest: world generated in {:.1?}", started.elapsed());
 }

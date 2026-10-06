@@ -11,7 +11,7 @@ use bevy::{
 
 use super::{
     assets::EnvironmentAssets,
-    config::ProvingGroundConfig,
+    config::ForestConfig,
     layout::SiteLayout,
     scatter::{fbm, smoothstep, value_noise},
     vegetation::VegetationPlan,
@@ -19,7 +19,7 @@ use super::{
 
 pub type TerrainMaterial = ExtendedMaterial<StandardMaterial, TerrainExtension>;
 
-const SHADER: &str = "shaders/proving_ground_terrain.wgsl";
+const SHADER: &str = "forest/terrain.wgsl";
 
 #[derive(Asset, AsBindGroup, Reflect, Debug, Clone)]
 pub struct TerrainExtension {
@@ -49,7 +49,7 @@ impl MaterialExtension for TerrainExtension {
 
 /// Per-layer tile sizes (m), tints and roughness. Tints pull the five source
 /// textures (from three different libraries) into one coherent palette.
-fn terrain_params(config: &ProvingGroundConfig) -> TerrainParams {
+fn terrain_params(config: &ForestConfig) -> TerrainParams {
     TerrainParams {
         layer_scale: [Vec4::new(2.6, 3.2, 4.0, 2.8), Vec4::new(3.5, 0.0, 0.0, 0.0)],
         layer_tint: [
@@ -66,7 +66,7 @@ fn terrain_params(config: &ProvingGroundConfig) -> TerrainParams {
 
 pub fn spawn(
     commands: &mut Commands,
-    config: &ProvingGroundConfig,
+    config: &ForestConfig,
     layout: &SiteLayout,
     plan: &VegetationPlan,
     env: &EnvironmentAssets,
@@ -183,7 +183,7 @@ pub(super) fn footpath_distance(layout: &SiteLayout, p: Vec2) -> f32 {
     best
 }
 
-fn terrain_mesh(config: &ProvingGroundConfig, layout: &SiteLayout, plan: &VegetationPlan) -> Mesh {
+fn terrain_mesh(config: &ForestConfig, layout: &SiteLayout, plan: &VegetationPlan) -> Mesh {
     let t = &config.terrain;
     let lines = axis_lines(layout.half_extent + 30.0, t.inner_spacing, t.outer_growth, t.half_extent);
     let n = lines.len();
@@ -441,7 +441,7 @@ mod tests {
 
     #[test]
     fn road_is_gravel_and_launch_area_is_meadow() {
-        let config = ProvingGroundConfig::new(Quality::Medium);
+        let config = ForestConfig::new(Quality::Medium);
         let layout = SiteLayout::new(&config);
         for t in [0.2, 0.4, 0.6, 0.8] {
             // In the wheel track, 1.1 m off the centre line.

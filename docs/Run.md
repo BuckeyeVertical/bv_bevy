@@ -1,37 +1,68 @@
-# Run the Mission
+# Run a World
 
-Run these commands in four terminals, in order.
+Each world takes two terminals from `~/Code/bv_bevy`: PX4 + Gazebo (the drone)
+and Bevy (the world and the drone's camera). Start PX4 in terminal 1 first, then Bevy in terminal 2.
 
-## 1. Gazebo and PX4
+In the Bevy window the camera follows the drone. Press `F` for a free camera;
+left click enables mouse look, and `W/A/S/D`, `E/Q` and Shift move it.
 
-```bash
-cd ~/Code/bv_bevy
-docker compose -f gazebo/compose.px4.yaml up
-```
+## suas_2026
 
-## 2. Bevy
+The SUAS 2026 competition field: boundaries, lap route, targets and trees.
 
-```bash
-cd ~/Code/bv_bevy
-export BV_ENV_QUALITY=low 
-./run_proving_ground.sh
-```
-
-## 3. MAVROS
+Terminal 1:
 
 ```bash
-docker start bv-mission
-docker exec -it bv-mission bash
-ros2 launch mavros px4.launch \
-  fcu_url:=udp://:14540@host.docker.internal:14580
+./px4.sh suas_2026
 ```
 
-## 4. Mission
+Terminal 2:
 
 ```bash
-docker exec -it bv-mission bash
-export BV_MISSION_CONFIG=sim_params.yaml
-ros2 launch bv_core mission.launch.py
+cargo run -- suas_2026
 ```
 
-Open <http://localhost:8765> in a browser on the host machine.
+## forest
+
+A forest clearing with a launch pad, road, shed and power line.
+
+Terminal 1:
+
+```bash
+./px4.sh forest
+```
+
+Terminal 2:
+
+```bash
+cargo run -- forest
+```
+
+- `--quality low|medium|high` trades detail for frame rate (default `medium`).
+- `--no-shadows` turns sun shadows off.
+
+## satellite_map
+
+Real satellite imagery and terrain, streamed from the internet and cached in
+`.cache/`.
+
+Terminal 1:
+
+```bash
+./px4.sh satellite_map
+```
+
+Terminal 2:
+
+```bash
+cargo run -- satellite_map
+```
+
+- `--lat <deg> --lon <deg>` centres the map (default Tuttle Park, Columbus).
+  Pass the same values to `./px4.sh` so PX4's home matches.
+
+## Other options
+
+`./px4.sh --prebuilt <world>` uses the published simulator image instead of a
+local build. `cargo run -- <world> --screenshot <png>` (and `forest --tour
+<dir>`) render without a drone and exit, for checking the world itself.

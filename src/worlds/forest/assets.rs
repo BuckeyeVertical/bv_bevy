@@ -18,14 +18,14 @@ use bevy::{
     tasks::ComputeTaskPool,
 };
 
-pub const TREES: &str = "environment/vegetation/trees.glb";
-pub const FOREST_PROPS: &str = "environment/vegetation/forest_props.glb";
-pub const GRASS: &str = "environment/vegetation/grass.glb";
-pub const SHED: &str = "environment/buildings/shed.glb";
-pub const SHED_PROPS: &str = "environment/props/shed_props.glb";
-pub const BARREL: &str = "environment/props/barrel_01.glb";
-pub const BARRIER: &str = "environment/props/concrete_barrier.glb";
-pub const POLES: &str = "environment/props/electricity_poles.glb";
+pub const TREES: &str = "forest/vegetation/trees.glb";
+pub const FOREST_PROPS: &str = "forest/vegetation/forest_props.glb";
+pub const GRASS: &str = "forest/vegetation/grass.glb";
+pub const SHED: &str = "forest/buildings/shed.glb";
+pub const SHED_PROPS: &str = "forest/props/shed_props.glb";
+pub const BARREL: &str = "forest/props/barrel_01.glb";
+pub const BARRIER: &str = "forest/props/concrete_barrier.glb";
+pub const POLES: &str = "forest/props/electricity_poles.glb";
 
 const GLB_FILES: [&str; 8] = [TREES, FOREST_PROPS, GRASS, SHED, SHED_PROPS, BARREL, BARRIER, POLES];
 
@@ -65,7 +65,7 @@ impl MeshLibrary {
     pub fn parts(&self, name: &str) -> &[Part] {
         self.meshes
             .get(name)
-            .unwrap_or_else(|| panic!("proving ground: mesh '{name}' missing from environment GLBs"))
+            .unwrap_or_else(|| panic!("forest: mesh '{name}' missing from environment GLBs"))
     }
 
     pub fn contains(&self, name: &str) -> bool {
@@ -75,17 +75,17 @@ impl MeshLibrary {
 
 pub fn load(asset_server: &AssetServer, sky: &'static str, ibl: &'static str) -> EnvironmentAssets {
     let surface = |name: &str| SurfaceTextures {
-        diffuse: load_repeating(asset_server, format!("environment/materials/{name}_diff.jpg"), true, None),
-        normal: load_repeating(asset_server, format!("environment/materials/{name}_nor.jpg"), false, None),
-        roughness: load_repeating(asset_server, format!("environment/materials/{name}_rough.jpg"), false, None),
+        diffuse: load_repeating(asset_server, format!("forest/materials/{name}_diff.jpg"), true, None),
+        normal: load_repeating(asset_server, format!("forest/materials/{name}_nor.jpg"), false, None),
+        roughness: load_repeating(asset_server, format!("forest/materials/{name}_rough.jpg"), false, None),
     };
     let array = Some(ImageArrayLayout::RowCount { rows: TERRAIN_LAYERS });
     EnvironmentAssets {
         gltfs: GLB_FILES.iter().map(|path| asset_server.load(*path)).collect(),
         sky: asset_server.load(sky),
         ibl: asset_server.load(ibl),
-        terrain_albedo: load_repeating(asset_server, "environment/materials/terrain_albedo.jpg".into(), true, array),
-        terrain_normal: load_repeating(asset_server, "environment/materials/terrain_normal.jpg".into(), false, array),
+        terrain_albedo: load_repeating(asset_server, "forest/materials/terrain_albedo.jpg".into(), true, array),
+        terrain_normal: load_repeating(asset_server, "forest/materials/terrain_normal.jpg".into(), false, array),
         asphalt: surface("asphalt"),
         wall: surface("factory_wall"),
     }

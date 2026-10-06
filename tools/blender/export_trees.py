@@ -12,7 +12,7 @@ The source trees are geometry-node trees that realise ~2-7 million triangles eac
    atlas, so the trees' own node groups rebuild them out of cards;
 3. realises each tree, decimates bark/trunk, and builds LOD1/LOD2 by keeping a
    random subset of card islands scaled up to preserve canopy coverage;
-4. exports every tree LOD into assets/environment/vegetation/trees.glb with
+4. exports every tree LOD into assets/forest/vegetation/trees.glb with
    shared materials.  Mesh names are "<tree>_lod<n>".
 """
 

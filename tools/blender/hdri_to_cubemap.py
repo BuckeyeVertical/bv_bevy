@@ -3,7 +3,7 @@
 Run with Blender's Python (it ships numpy and can read .hdr/.exr):
 
     blender -b --python tools/blender/hdri_to_cubemap.py -- \
-        assets/raw/sky/meadow_2_4k.hdr assets/environment/sky/meadow_2 --face 1024
+        assets/raw/sky/meadow_2_4k.hdr assets/forest/sky/meadow_2 --face 1024
 
 Outputs:
   <out>_cubemap.ktx2  RGB9E5 cube, full mip chain, zstd supercompressed (skybox).

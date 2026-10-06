@@ -1,4 +1,4 @@
-use std::{f32::consts::FRAC_PI_2, sync::Arc};
+use std::sync::Arc;
 
 use bevy::{
     camera::{PerspectiveProjection, Projection, RenderTarget},
@@ -96,12 +96,19 @@ impl PinholeIntrinsics {
     }
 }
 
+/// The real camera (3840x2160, fx 2296.4) at half resolution: same shape and
+/// field of view, so a detector sees what it will see in flight. Each frame
+/// carries these intrinsics (see docs/camera_frame_v1.md).
+const SIM_WIDTH: u32 = 1920;
+const SIM_HEIGHT: u32 = 1080;
+const SIM_HORIZONTAL_FOV: f32 = 1.392_727_1; // 79.8 deg: 2 atan(960 / 1148.2)
+
 impl Default for DroneCameraConfig {
     fn default() -> Self {
         Self {
-            width: 1280,
-            height: 720,
-            horizontal_fov: FRAC_PI_2,
+            width: SIM_WIDTH,
+            height: SIM_HEIGHT,
+            horizontal_fov: SIM_HORIZONTAL_FOV,
             near: 0.05,
             far: 1000.0,
         }
@@ -126,6 +133,13 @@ impl DroneCameraPlugin {
         );
 
         Self { config }
+    }
+
+    /// One line for the startup summary.
+    pub fn describe(&self) -> String {
+        let c = &self.config;
+        let fx = c.width as f32 / 2.0 / (c.horizontal_fov / 2.0).tan();
+        format!("{}x{}, {:.2} deg horizontal, fx {fx:.1}", c.width, c.height, c.horizontal_fov.to_degrees())
     }
 
     pub fn from_env() -> Self {
@@ -342,6 +356,8 @@ fn remove_row_padding(data: &[u8], width: u32, height: u32) -> Vec<u8> {
 
 #[cfg(test)]
 mod tests {
+    use std::f32::consts::FRAC_PI_2;
+
     use super::*;
 
     #[test]
@@ -351,9 +367,28 @@ mod tests {
         assert!((fov - 1.024_778_9).abs() < 1e-6);
     }
 
+    /// 1280x720 with a 90 degree field of view: fx = 640, easy numbers.
+    fn square_pixel_test_camera() -> PinholeIntrinsics {
+        DroneCameraConfig {
+            width: 1280,
+            height: 720,
+            horizontal_fov: FRAC_PI_2,
+            ..default()
+        }
+        .intrinsics()
+    }
+
+    #[test]
+    fn default_matches_the_real_camera_at_half_resolution() {
+        let intrinsics = DroneCameraConfig::default().intrinsics();
+
+        assert_eq!((intrinsics.width, intrinsics.height), (1920, 1080));
+        assert!((intrinsics.fx - 2296.4008 / 2.0).abs() < 0.05, "{}", intrinsics.fx);
+    }
+
     #[test]
     fn projects_known_camera_points_to_pixels() {
-        let intrinsics = DroneCameraConfig::default().intrinsics();
+        let intrinsics = square_pixel_test_camera();
 
         assert_eq!(
             intrinsics.project_camera_point(Vec3::new(0.0, 0.0, -10.0)),
@@ -368,7 +403,7 @@ mod tests {
 
     #[test]
     fn projection_accounts_for_camera_world_pose() {
-        let intrinsics = DroneCameraConfig::default().intrinsics();
+        let intrinsics = square_pixel_test_camera();
         let camera = GlobalTransform::from(Transform::from_xyz(5.0, 2.0, 3.0));
 
         assert_eq!(

@@ -40,6 +40,11 @@ impl CameraFrameServerPlugin {
         }
     }
 
+    /// One line for the startup summary.
+    pub fn describe(&self) -> String {
+        format!("{}, JPEG quality {}", self.bind_address, self.jpeg_quality)
+    }
+
     pub fn from_env() -> Self {
         let bind_address =
             std::env::var(BIND_ADDRESS_ENV).unwrap_or_else(|_| DEFAULT_BIND_ADDRESS.to_owned());

@@ -10,3 +10,6 @@ assets/models/polo_shirt_mannequin.glb
 
 # Extracted Poly Haven downloads and Blender bake intermediates (multi-GB).
 assets/raw/
+
+# bevytiles imagery/heightmap cache (satellite_map world).
+.cache/
