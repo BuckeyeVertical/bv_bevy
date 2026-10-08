@@ -88,6 +88,9 @@ pub fn configure_cameras(
     sky: Res<SkyOrientation>,
     adapter: Res<RenderAdapter>,
 ) {
+    if cameras.is_empty() {
+        return;
+    }
     let lighting = &config.lighting;
     let msaa = supported_msaa(&adapter, lighting.msaa_samples);
     for camera in &cameras {
@@ -130,7 +133,7 @@ fn supported_msaa(adapter: &RenderAdapter, requested: u32) -> Msaa {
         Msaa::Sample2
     } else {
         if requested == 2 {
-            warn!("forest: adapter does not support 2x MSAA, using 4x");
+            warn_once!("forest: adapter does not support 2x MSAA, using 4x");
         }
         Msaa::Sample4
     }
