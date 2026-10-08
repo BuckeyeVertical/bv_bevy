@@ -4,10 +4,13 @@ Fly the mission stack (PX4, Gazebo, MAVROS, ROS) through a Bevy world. Use four
 terminals, in order. The example flies the SUAS 2026 field; for another world,
 use its name in steps 1 and 2 (see [Run.md](Run.md)).
 
+Open each terminal in the directory that holds `bv_bevy` and `bv_ws` (see the
+[README](../README.md#setup)); the `cd` paths below are relative to it.
+
 ## 1. Gazebo and PX4
 
 ```bash
-cd ~/Code/bv_bevy
+cd bv_bevy
 ./px4.sh suas_2026
 # or, with the prebuilt image instead of a local docker build:
 ./px4.sh --prebuilt suas_2026
@@ -18,7 +21,7 @@ cd ~/Code/bv_bevy
 ## 2. Bevy
 
 ```bash
-cd ~/Code/bv_bevy
+cd bv_bevy
 cargo run -- suas_2026
 ```
 

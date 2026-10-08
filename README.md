@@ -16,10 +16,12 @@ for ROS, MAVROS, vision, and the GCS.
 
 Install Docker Desktop or OrbStack, Rust, and Node.js 20 or newer.
 
-Keep the repositories in this layout:
+Pick a parent directory for the repositories (any location works) and clone
+both into it so they sit side by side. Each command block below starts
+with a `cd` relative to that parent, so run it from the parent directory.
 
 ```text
-Code/
+<parent>/
 ├── bv_bevy/
 └── bv_ws/
     ├── ltdetr.pt
@@ -32,7 +34,7 @@ Code/
 Build the GCS webpage once:
 
 ```bash
-cd ~/Code/bv_ws/src/bv_gcs/web
+cd bv_ws/src/bv_gcs/web
 npm ci
 npm run build
 ```
@@ -44,7 +46,7 @@ make sure file is named Render_CAD.STL
 Build the ROS, ML, and GCS image:
 
 ```bash
-cd ~/Code/bv_ws/src
+cd bv_ws/src
 docker build \
   -f bv_core/container/Dockerfile.arm_no_PX4 \
   -t bv-mission:latest \
@@ -54,7 +56,7 @@ docker build \
 Create the persistent mission container from the `bv_ws` directory:
 
 ```bash
-cd ~/Code/bv_ws
+cd bv_ws
 docker run -d \
   --name bv-mission \
   --privileged \
@@ -76,7 +78,7 @@ exit
 Build the headless Gazebo and PX4 image. This first build takes several minutes.
 
 ```bash
-cd ~/Code/bv_bevy
+cd bv_bevy
 docker compose -f gazebo/compose.px4.yaml build
 # or alternatively skip long docker build step 
 # by pulling prebuilt image (see below)

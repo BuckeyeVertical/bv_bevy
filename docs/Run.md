@@ -1,6 +1,6 @@
 # Run a World
 
-Each world takes two terminals from `~/Code/bv_bevy`: PX4 + Gazebo (the drone)
+Each world takes two terminals from the `bv_bevy` directory: PX4 + Gazebo (the drone)
 and Bevy (the world and the drone's camera). Start PX4 in terminal 1 first, then Bevy in terminal 2.
 
 In the Bevy window the camera follows the drone. Press `F` for a free camera;
