@@ -14,6 +14,7 @@ use bevy::{
     },
     pbr::{DistanceFog, FogFalloff},
     prelude::*,
+    render::{render_resource::TextureFormat, renderer::RenderAdapter},
 };
 use serde::Deserialize;
 
@@ -85,17 +86,16 @@ pub fn configure_cameras(
     config: Res<ForestConfig>,
     env: Res<EnvironmentAssets>,
     sky: Res<SkyOrientation>,
+    adapter: Res<RenderAdapter>,
 ) {
     let lighting = &config.lighting;
+    let msaa = supported_msaa(&adapter, lighting.msaa_samples);
     for camera in &cameras {
         commands.entity(camera).insert((
             Hdr,
             // No DepthPrepass: with alpha-tested foliage and LOD cross-fade
             // dithering it produced white speckles, for only ~10% speed-up.
-            match lighting.msaa_samples {
-                2 => Msaa::Sample2,
-                _ => Msaa::Sample4,
-            },
+            msaa,
             Tonemapping::TonyMcMapface,
             Exposure { ev100: lighting.exposure_ev100 },
             Skybox { image: Some(env.sky.clone()), brightness: lighting.sky_brightness, rotation: sky.rotation },
@@ -114,6 +114,25 @@ pub fn configure_cameras(
                 falloff: FogFalloff::from_visibility_squared(lighting.fog_visibility),
             },
         ));
+    }
+}
+
+/// The requested MSAA level if the adapter can do it for the HDR colour and
+/// depth targets, else 4x (guaranteed by WebGPU). Software rasterisers such as
+/// llvmpipe (WSL without GPU passthrough) reject 2x and abort on the first frame.
+fn supported_msaa(adapter: &RenderAdapter, requested: u32) -> Msaa {
+    let supported = |count| {
+        [TextureFormat::Rgba16Float, TextureFormat::Depth32Float]
+            .into_iter()
+            .all(|format| adapter.get_texture_format_features(format).flags.sample_count_supported(count))
+    };
+    if requested == 2 && supported(2) {
+        Msaa::Sample2
+    } else {
+        if requested == 2 {
+            warn!("forest: adapter does not support 2x MSAA, using 4x");
+        }
+        Msaa::Sample4
     }
 }
 
