@@ -356,6 +356,10 @@ fn broadcast_frames(bind_address: &str, jpeg_quality: u8, shared: &PublisherShar
 }
 
 fn configure_consumer(stream: &TcpStream) -> io::Result<()> {
+    // On macOS/BSD an accepted socket inherits the listener's non-blocking
+    // mode, so write_all would fail with WouldBlock once the send buffer
+    // filled (~320 KB) and drop the consumer mid-JPEG. Linux does not inherit.
+    stream.set_nonblocking(false)?;
     stream.set_nodelay(true)?;
     stream.set_write_timeout(Some(WRITE_TIMEOUT))?;
     Ok(())
