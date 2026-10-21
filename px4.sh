@@ -11,7 +11,15 @@ if [[ "${1:-}" == "--prebuilt" ]]; then
     compose=gazebo/compose.px4.prebuilt.yaml
     shift
     # Fetch the newest published image; without a network, use the one already here.
-    docker compose -f "$compose" pull || echo "Could not pull the simulator image; using the local copy" >&2
+    if ! docker compose -f "$compose" pull; then
+        image=ghcr.io/buckeyevertical/bv-simulator:latest
+        if ! docker image inspect "$image" >/dev/null 2>&1; then
+            echo "Could not download $image and there is no local copy." >&2
+            echo "Check your network, or build the image locally and run without --prebuilt." >&2
+            exit 1
+        fi
+        echo "Could not pull the simulator image; using the local copy" >&2
+    fi
 fi
 
 # The world knows its home; ask it rather than keeping a second copy here.

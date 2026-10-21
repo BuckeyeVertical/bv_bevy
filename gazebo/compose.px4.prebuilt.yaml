@@ -3,9 +3,7 @@ services:
     container_name: bv-simulator
     image: ghcr.io/buckeyevertical/bv-simulator:latest
     platform: linux/amd64
-    build:
-      context: .
-      target: px4-sitl
+    # No build section on purpose: --prebuilt must never start the long local build.
     # Docker Desktop and OrbStack define host.docker.internal; this makes Linux
     # do the same, for PX4's link to the host (see px4/run.sh).
     extra_hosts:
