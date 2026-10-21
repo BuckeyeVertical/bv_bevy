@@ -38,7 +38,10 @@ local physics proxies.
 
 The final container starts the Gazebo server with PX4's sensor plugin
 configuration, the standalone state bridge, and PX4 SITL. It exposes state on
-TCP 7001 and the usual PX4 UDP endpoints on 14580 and 18570.
+TCP 7001 and the usual PX4 UDP endpoints on 14580 and 18570. PX4 also sends to
+the host on UDP 14540 (`px4/run.sh`), so an API program there, such as MAVSDK
+listening on `udpin://0.0.0.0:14540`, connects without speaking first and can
+reconnect on every run.
 
 `px4/server.config` keeps flight-critical physics and sensor systems but omits
 Gazebo's rendering, optical-flow, and video systems. Bevy provides the camera

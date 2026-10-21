@@ -63,6 +63,6 @@ cargo run -- satellite_map
 
 ## Other options
 
-`./px4.sh --prebuilt <world>` uses the published simulator image instead of a
-local build. `cargo run -- <world> --screenshot <png>` (and `forest --tour
+`./px4.sh --prebuilt <world>` downloads and uses the team's published simulator
+image instead of a local build. `cargo run -- <world> --screenshot <png>` (and `forest --tour
 <dir>`) render without a drone and exit, for checking the world itself.

@@ -10,6 +10,8 @@ compose=gazebo/compose.px4.yaml
 if [[ "${1:-}" == "--prebuilt" ]]; then
     compose=gazebo/compose.px4.prebuilt.yaml
     shift
+    # Fetch the newest published image; without a network, use the one already here.
+    docker compose -f "$compose" pull || echo "Could not pull the simulator image; using the local copy" >&2
 fi
 
 # The world knows its home; ask it rather than keeping a second copy here.

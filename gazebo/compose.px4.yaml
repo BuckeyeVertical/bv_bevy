@@ -6,6 +6,10 @@ services:
     build:
       context: .
       target: px4-sitl
+    # Docker Desktop and OrbStack define host.docker.internal; this makes Linux
+    # do the same, for PX4's link to the host (see px4/run.sh).
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     ports:
       - "127.0.0.1:7001:7001"
       - "14580:14580/udp"

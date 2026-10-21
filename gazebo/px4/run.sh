@@ -41,6 +41,25 @@ configure_px4() {
     return 1
 }
 
+# PX4's own links only reach programs inside this container. This one sends
+# to the machine running Docker, on the API port MAVSDK listens on by default
+# (udpin://0.0.0.0:14540), so a script there connects without speaking first
+# and reconnects on every run.
+start_host_link() {
+    local host="${BV_PX4_HOST:-host.docker.internal}"
+    local host_ip
+    host_ip="$(getent hosts "$host" | awk '{ print $1; exit }')"
+    if [ -z "$host_ip" ]; then
+        echo "Cannot resolve $host; no MAVLink link to the host" >&2
+        return 0
+    fi
+    (
+        cd /opt/px4/rootfs
+        /opt/px4/bin/px4-mavlink start -x -u 14590 -r 4000000 -f -m onboard \
+            -o "${BV_PX4_HOST_PORT:-14540}" -t "$host_ip"
+    )
+}
+
 gz sim --force-version 8 -s -r "$world" &
 gazebo_pid=$!
 
@@ -53,7 +72,7 @@ bridge_pid=$!
 ) &
 px4_pid=$!
 
-configure_px4 &
+(configure_px4 && start_host_link) &
 
 terminate() {
     kill "$px4_pid" "$gazebo_pid" "$bridge_pid" 2>/dev/null || true
