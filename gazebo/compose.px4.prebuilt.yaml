@@ -20,4 +20,5 @@ services:
       BV_BRIDGE_CONFIG: /opt/bv/config/px4_x500_gimbal.json
       BV_PX4_WORLD: bv_mission
       BV_PX4_NAV_DLL_ACT: "0"
+      BV_PX4_XY_VEL_MAX: "25"
       PX4_PARAM_SIM_BAT_MIN_PCT: "100"

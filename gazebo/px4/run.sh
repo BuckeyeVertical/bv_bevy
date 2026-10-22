@@ -23,6 +23,7 @@ export PX4_HOME_ALT="${PX4_HOME_ALT:-0}"
 
 configure_px4() {
     local nav_dll_action="${BV_PX4_NAV_DLL_ACT:-0}"
+    local xy_vel_max="${BV_PX4_XY_VEL_MAX:-25}"
 
     for _ in {1..300}; do
         if (
@@ -30,6 +31,8 @@ configure_px4() {
             /opt/px4/bin/px4-commander status >/dev/null 2>&1 || exit 1
             /opt/px4/bin/px4-param set NAV_DLL_ACT "$nav_dll_action" >/dev/null 2>&1 || exit 1
             /opt/px4/bin/px4-param compare NAV_DLL_ACT "$nav_dll_action" >/dev/null 2>&1 || exit 1
+            /opt/px4/bin/px4-param set MPC_XY_VEL_MAX "$xy_vel_max" >/dev/null 2>&1 || exit 1
+            /opt/px4/bin/px4-param compare MPC_XY_VEL_MAX "$xy_vel_max" >/dev/null 2>&1 || exit 1
             /opt/px4/bin/px4-param save >/dev/null 2>&1
         ); then
             return 0
