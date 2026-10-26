@@ -23,7 +23,7 @@ if [[ "${1:-}" == "--prebuilt" ]]; then
 fi
 
 # The world knows its home; ask it rather than keeping a second copy here.
-home="$(cargo run --quiet -- "$@" --px4-home)"
+home="$(cargo run --release --quiet -- "$@" --px4-home)"
 eval "$(sed 's/^/export /' <<<"$home")"
 echo "PX4 home: $PX4_HOME_LAT, $PX4_HOME_LON (alt $PX4_HOME_ALT)" >&2
 
