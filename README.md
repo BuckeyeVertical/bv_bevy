@@ -11,7 +11,7 @@ the commands below in WSL.
 ```bash
 git clone https://github.com/BuckeyeVertical/bv_bevy.git
 cd bv_bevy
-cargo build
+cargo build --release
 ```
 
 ## Run
