@@ -1,6 +1,6 @@
 # Proving-ground runtime assets
 
-Runtime assets for the `forest` world (`cargo run -- forest`).
+Runtime assets for the `forest` world (`cargo run --release -- forest`).
 Everything here is generated from the Poly Haven downloads by the scripts in
 `tools/blender/`; the originals are extracted into `assets/raw/` (git-ignored,
 ~5 GB) and never modified.

@@ -23,7 +23,7 @@ Terminal 1:
 Terminal 2:
 
 ```bash
-cargo run -- suas_2026
+cargo run --release -- suas_2026
 ```
 
 ## forest
@@ -39,7 +39,7 @@ Terminal 1:
 Terminal 2:
 
 ```bash
-cargo run -- forest
+cargo run --release -- forest
 ```
 
 - `--quality low|medium|high` trades detail for frame rate (default `medium`).
@@ -59,7 +59,7 @@ Terminal 1:
 Terminal 2:
 
 ```bash
-cargo run -- satellite_map
+cargo run --release -- satellite_map
 ```
 
 - `--lat <deg> --lon <deg>` centres the map (default Tuttle Park, Columbus).
@@ -74,8 +74,8 @@ on TCP 7002.
 
 ## Other options
 
-`cargo run -- <world> --screenshot <png>` (and `forest --tour <dir>`) render without a
-drone and exit, for checking the world itself. `cargo run -- --help` lists every world and
-its options.
+`cargo run --release -- <world> --screenshot <png>` (and `forest --tour <dir>`) render
+without a drone and exit, for checking the world itself. `cargo run --release -- --help`
+lists every world and its options.
 
 Stop with Ctrl+C in both terminals.

@@ -23,7 +23,7 @@ Two terminals in `bv_bevy`, PX4 first:
 ```
 
 ```bash
-cargo run -- forest
+cargo run --release -- forest
 ```
 
 

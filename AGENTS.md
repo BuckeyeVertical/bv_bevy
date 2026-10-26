@@ -18,10 +18,11 @@ Run from the repo root, each as a background process, PX4 first:
 1. PX4 + Gazebo: `./px4.sh --prebuilt <world>`. Without `--prebuilt` it uses an image
    built locally with `docker compose -f gazebo/compose.px4.yaml build`, which is only
    needed to test changes under `gazebo/`.
-2. Bevy: `cargo run -- <world>`, with the same world.
+2. Bevy: `cargo run --release -- <world>`, with the same world.
 
-`cargo run -- --help` lists the worlds and their options. `cargo run -- <world>
---screenshot <png>` renders a world without PX4 and exits.
+`cargo run --release -- --help` lists the worlds and their options.
+`cargo run --release -- <world> --screenshot <png>` renders a world without PX4 and
+exits.
 
 Check the streams with `python3 tools/verify_sim_stream.py` and
 `python3 tools/verify_camera_stream.py --output frame.jpg`. Inspect PX4 with

@@ -22,7 +22,7 @@ cd bv_bevy
 
 ```bash
 cd bv_bevy
-cargo run -- suas_2026
+cargo run --release -- suas_2026
 ```
 
 The window follows the drone. Press `F` for the free camera; left click enables

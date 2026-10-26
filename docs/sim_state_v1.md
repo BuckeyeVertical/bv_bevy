@@ -70,7 +70,7 @@ Replay it without Gazebo:
 
 ```bash
 python3 tools/replay_sim_state.py flight.bvsim --port 7003
-BV_SIM_ENDPOINT=127.0.0.1:7003 cargo run
+BV_SIM_ENDPOINT=127.0.0.1:7003 cargo run --release
 ```
 
 Replay timing follows consecutive `sim_time_ns` values. `--speed 2` runs at
